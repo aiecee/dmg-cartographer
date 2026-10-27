@@ -20,13 +20,13 @@ class EmulatorMixin:
 
     @staticmethod
     def _data_dir_for(project_dir: str) -> Path:
-        """Return <project_dir>/.pyboy-mcp, creating roms/, saves/ and checkpoints/ inside it."""
+        """Return <project_dir>/.dmg-cartographer, creating roms/, saves/ and checkpoints/ inside it."""
         if not isinstance(project_dir, str) or not os.path.isabs(project_dir):
             raise ValueError(f"project_dir must be an absolute path to your project folder, got {project_dir!r}")
         project = Path(project_dir).resolve()
         if not project.is_dir():
             raise ValueError(f"project_dir does not exist or is not a folder: {project_dir!r}")
-        data_dir = project / ".pyboy-mcp"
+        data_dir = project / ".dmg-cartographer"
         (data_dir / "roms").mkdir(parents=True, exist_ok=True)
         return data_dir
 
@@ -56,14 +56,6 @@ class EmulatorMixin:
         with self._lock:
             return list(self._roms(self._data_dir_for(project_dir) / "roms"))
 
-    def list_roms(self, rom_dir: str) -> list[str]:
-        """ROM files under an absolute folder, recursively, as paths relative to it (symlinks skipped)."""
-        if not isinstance(rom_dir, str) or not os.path.isabs(rom_dir) or not Path(rom_dir).is_dir():
-            raise ValueError(f"rom_dir must be an existing absolute folder, got {rom_dir!r}")
-        with self._lock:
-            return list(self._roms(Path(rom_dir).resolve()))
-
-
     def _require_game(self) -> Any:
         if self._pyboy is None:
             raise RuntimeError("No game loaded. Call game(action='load', rom_path=<absolute path to a .gb or .gbc file>).")
@@ -92,25 +84,30 @@ class EmulatorMixin:
             return self._open_rom(allowed[rom_name], rom_name, data_dir)
 
 
-    def load_rom(self, rom_path: str) -> dict[str, Any]:
-        """Load a ROM from an absolute file path. Its data goes to DMG_CARTOGRAPHER_DIR, or <ROM folder>/.dmg-cartographer."""
+    def add_rom(self, project_dir: str, rom_path: str) -> str:
+        """Copy a ROM into <project>/.dmg-cartographer/roms/ and return its name there.
+
+        The game then runs from the copy, so moving or deleting the original doesn't break it. A ROM already in that
+        folder is used as it is. An existing file with the same name is reused only if its bytes match; otherwise
+        nothing is overwritten and the call fails.
+        """
         with self._lock:
-            path = self._rom_file(rom_path)
-            override = os.environ.get("DMG_CARTOGRAPHER_DIR")
-            if override is not None and not os.path.isabs(override):
-                raise ValueError("DMG_CARTOGRAPHER_DIR must be an absolute path")
-            data_dir = Path(override) if override else self._default_data_dir(path)
-            data_dir.mkdir(parents=True, exist_ok=True)
-            return self._open_rom(path, path.name, data_dir)
+            source = self._rom_file(rom_path)
+            roms = self._data_dir_for(project_dir) / "roms"
+            try:
+                return source.resolve().relative_to(roms.resolve()).as_posix()
+            except ValueError:
+                pass  # outside the project's ROM folder: copy it in
+            target = roms / source.name
+            data = source.read_bytes()
+            if target.exists() or target.is_symlink():
+                if target.is_symlink() or not target.is_file() or target.read_bytes() != data:
+                    raise ValueError(f"{target.name} already exists in {roms} with different contents; "
+                                     "rename one of them")
+                return target.name
+            atomic_write(target, data)
+            return target.name
 
-
-    @staticmethod
-    def _default_data_dir(path: Path) -> Path:
-        """Where a ROM's data goes when DMG_CARTOGRAPHER_DIR is not set. A ROM in <project>/.pyboy-mcp/roms keeps
-        <project>/.pyboy-mcp as its root, so data from earlier versions stays where it was."""
-        if path.parent.name == "roms" and path.parent.parent.name == ".pyboy-mcp":
-            return path.parent.parent
-        return path.parent / ".dmg-cartographer"
 
     @staticmethod
     def _rom_file(rom_path: str) -> Path:

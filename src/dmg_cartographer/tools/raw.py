@@ -29,26 +29,30 @@ def _with_images(data: dict[str, Any], shape: Any, *images: bytes | None) -> lis
 
 
 @_expose("raw")
-def game(action: Literal["list", "load", "close", "reset", "status"], rom_dir: str | None = None,
-         rom_path: str | None = None) -> Envelope[GameData]:
-    """Manage the loaded ROM. Paths are absolute.
+def game(action: Literal["list", "load", "close", "reset", "status"], project_dir: str | None = None,
+         rom_name: str | None = None, rom_path: str | None = None) -> Envelope[GameData]:
+    """Manage the loaded ROM. Everything lives in <project_dir>/.dmg-cartographer/, which is created if missing.
 
-    list   -> roms: .gb and .gbc files under rom_dir, recursively, as paths relative to it. Needs rom_dir.
-    load   -> the emulator state after loading, paused at frame 0. Needs rom_path, the ROM file itself.
-              Its data goes to DMG_CARTOGRAPHER_DIR if set; otherwise next to the ROM, in .dmg-cartographer/
-              (or <project>/.pyboy-mcp/ for a ROM kept in <project>/.pyboy-mcp/roms/).
+    list   -> roms: ROM paths under <project_dir>/.dmg-cartographer/roms/. Needs project_dir (absolute).
+    load   -> the emulator state after loading, paused at frame 0. Needs project_dir and one of:
+              rom_name, a path from list; or rom_path, an absolute path to a .gb or .gbc file anywhere. A rom_path
+              is copied into .dmg-cartographer/roms/ first and the game runs from the copy, so moving or deleting
+              the original doesn't matter. An existing ROM of the same name with different contents is not
+              overwritten; the load fails instead.
     close  -> the state after closing the ROM.
     reset  -> restarts the ROM at frame 0; clears hooks; checkpoints on disk are kept.
     status -> loaded, rom, cartridge title and timeline_frame, without changing anything.
     """
     if action == "list":
-        if rom_dir is None:
-            raise ValueError("game(action='list') needs rom_dir")
-        return envelope({"action": "list", "roms": CONTROLLER.list_roms(rom_dir)}, GameData)
+        if project_dir is None:
+            raise ValueError("game(action='list') needs project_dir")
+        return envelope({"action": "list", "roms": CONTROLLER.list_games(project_dir)}, GameData)
     if action == "load":
-        if rom_path is None:
-            raise ValueError("game(action='load') needs rom_path")
-        return envelope(_as("load", CONTROLLER.load_rom(rom_path)), GameData)
+        if project_dir is None or (rom_name is None) == (rom_path is None):
+            raise ValueError("game(action='load') needs project_dir and either rom_name or rom_path")
+        if rom_path is not None:
+            rom_name = CONTROLLER.add_rom(project_dir, rom_path)
+        return envelope(_as("load", CONTROLLER.load_game(project_dir, rom_name)), GameData)
     if action == "close":
         return envelope(_as("close", CONTROLLER.close_game()), GameData)
     if action == "reset":

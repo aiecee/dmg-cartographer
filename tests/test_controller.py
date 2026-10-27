@@ -75,7 +75,7 @@ class FakePyBoy:
 
 @pytest.fixture
 def project(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     (roms / "nested").mkdir(parents=True)
     (roms / "test.gb").write_bytes(b"test rom placeholder")
     (roms / "second.gbc").write_bytes(b"test rom placeholder")
@@ -139,7 +139,7 @@ def test_sequence_validated_and_counts(controller, project):
 
 def test_load_restricts_paths_and_symlinks(controller, project, tmp_path):
     (tmp_path / "outside.gb").write_bytes(b"out")
-    (tmp_path / ".pyboy-mcp" / "roms" / "linked.gb").symlink_to(tmp_path / "outside.gb")
+    (tmp_path / ".dmg-cartographer" / "roms" / "linked.gb").symlink_to(tmp_path / "outside.gb")
     for rom in ["../outside.gb", "linked.gb", "/tmp/outside.gb", "missing.gb"]:
         with pytest.raises(ValueError):
             controller.load_game(project, rom)
@@ -208,9 +208,9 @@ def test_step_and_capture_is_one_exact_advance(controller, project):
 
 def test_nested_rom_loads_by_relative_path_and_rejects_other_paths(controller, project, tmp_path):
     assert controller.load_game(project, "nested/deep.gbc")["rom"] == "nested/deep.gbc"
-    assert (tmp_path / ".pyboy-mcp" / "roms").is_dir()
+    assert (tmp_path / ".dmg-cartographer" / "roms").is_dir()
     assert controller.status()["rom_folder"].endswith("-" + controller._rom_sha1[:8])
-    for bad in ["../test.gb", str(tmp_path / ".pyboy-mcp/roms/test.gb"), "missing.gb"]:
+    for bad in ["../test.gb", str(tmp_path / ".dmg-cartographer/roms/test.gb"), "missing.gb"]:
         with pytest.raises(ValueError):
             controller.load_game(project, bad)
 
@@ -218,7 +218,7 @@ def test_nested_rom_loads_by_relative_path_and_rejects_other_paths(controller, p
 def test_battery_save_is_written_to_the_rom_folder_and_restored(controller, project, tmp_path):
     controller.load_game(project, "test.gb")
     controller.close_game()
-    saves = list((tmp_path / ".pyboy-mcp").glob("test-*/save.ram"))
+    saves = list((tmp_path / ".dmg-cartographer").glob("test-*/save.ram"))
     assert [p.read_bytes() for p in saves] == [b"SAVE"]
 
     controller.load_game(project, "test.gb")
@@ -238,7 +238,7 @@ def test_new_project_gets_empty_pyboy_folder_and_status_reports_it(controller, t
     other = tmp_path / "other-project"
     other.mkdir()
     assert controller.list_games(str(other)) == []
-    assert sorted(p.name for p in (other / ".pyboy-mcp").iterdir()) == ["roms"]
+    assert sorted(p.name for p in (other / ".dmg-cartographer").iterdir()) == ["roms"]
     assert controller.status()["data_dir"] is None
 
 

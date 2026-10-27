@@ -11,7 +11,7 @@ The emulator is paused between calls. Only `step` and `watch`, and experiment an
 
 ## Workflow
 
-1. **Load and go to a repeatable point.** `game(action='load', rom_path=<absolute ROM path>)`. Advance to a stable state with `step`, then `state(action='save', name='start')`. Every later comparison starts from that checkpoint.
+1. **Load and go to a repeatable point.** `game(action='load', project_dir=<absolute project folder>, rom_path=<absolute ROM path>)`. Advance to a stable state with `step`, then `state(action='save', name='start')`. Every later comparison starts from that checkpoint.
 2. **Pick the value to find and how it changes.** Write down the on-screen meaning and the input that should change it, such as "pressing right moves the player one tile".
 3. **Gather candidates.** Two routes:
    - Experiments: `experiment(action='run', name='right', actions=[...])` from the checkpoint, then run `left` and `idle` the same way, each with a fresh `state(action='load', name='start')` first. Reuse one name per action so repeats group together.

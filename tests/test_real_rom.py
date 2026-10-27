@@ -1,8 +1,8 @@
 """INTEGRATION tests against real PyBoy and a real Dr. Mario ROM.
 
-These are the only tests that check real emulator behaviour. They skip when no ROM is present in .pyboy-mcp/roms/.
+These are the only tests that check real emulator behaviour. They skip when no ROM is present in .dmg-cartographer/roms/.
 The ROM is copied into a temporary project, so nothing is written into the real project folder, and the ROM itself
-is never committed (the .pyboy-mcp folder is gitignored).
+is never committed (the .dmg-cartographer folder is gitignored).
 """
 import shutil
 from pathlib import Path
@@ -14,8 +14,8 @@ from dmg_cartographer import graphics
 from dmg_cartographer.core.controller import PyBoyController
 
 REPO = Path(__file__).resolve().parents[1]
-ROMS = sorted((REPO / ".pyboy-mcp" / "roms").glob("Dr. Mario*.gb"))
-pytestmark = pytest.mark.skipif(not ROMS, reason="no Dr. Mario ROM in .pyboy-mcp/roms; real-emulator tests skipped")
+ROMS = sorted((REPO / ".dmg-cartographer" / "roms").glob("Dr. Mario*.gb"))
+pytestmark = pytest.mark.skipif(not ROMS, reason="no Dr. Mario ROM in .dmg-cartographer/roms; real-emulator tests skipped")
 
 L = [{"press": ["left"], "frames": 1}, {"release": ["left"], "frames": 1}]
 R = [{"press": ["right"], "frames": 1}, {"release": ["right"], "frames": 1}]
@@ -25,7 +25,7 @@ I = [{"frames": 2}]
 @pytest.fixture(scope="module")
 def real(tmp_path_factory):
     project = tmp_path_factory.mktemp("drmario")
-    rom_dir = project / ".pyboy-mcp" / "roms"
+    rom_dir = project / ".dmg-cartographer" / "roms"
     rom_dir.mkdir(parents=True)
     shutil.copy(ROMS[0], rom_dir / ROMS[0].name)
     c = PyBoyController()

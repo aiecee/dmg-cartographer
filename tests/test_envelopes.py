@@ -15,7 +15,7 @@ from test_priority2 import make_rom
 
 @pytest.fixture
 def ctl(tmp_path, monkeypatch):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     (roms / "puzzle.gb").write_bytes(make_rom())
     c = PyBoyController(BankedSim)
@@ -45,9 +45,9 @@ def check(result, action, images=0):
 
 def test_game_actions(ctl, tmp_path):
     assert check(raw.game("status"), "status").data.loaded is True
-    assert check(raw.game("list", rom_dir=str(tmp_path / ".pyboy-mcp" / "roms")), "list").data.roms == ["puzzle.gb"]
+    assert check(raw.game("list", project_dir=str(tmp_path)), "list").data.roms == ["puzzle.gb"]
     check(raw.game("reset"), "reset")
-    check(raw.game("load", rom_path=str(tmp_path / ".pyboy-mcp" / "roms" / "puzzle.gb")), "load")
+    check(raw.game("load", project_dir=str(tmp_path), rom_name="puzzle.gb"), "load")
     check(raw.game("close"), "close")
 
 

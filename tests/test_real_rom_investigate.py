@@ -14,7 +14,7 @@ from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.tools import investigation as inv
 from dmg_cartographer.tools import raw
 
-DEFAULT = Path.home() / "projects" / "dr-mario-re" / ".pyboy-mcp" / "roms" / "Dr. Mario (World) (Rev 1).gb"
+DEFAULT = Path(__file__).resolve().parents[1] / ".dmg-cartographer" / "roms" / "Dr. Mario (World) (Rev 1).gb"
 ROM = Path(os.environ["DMG_TEST_ROM"]) if os.environ.get("DMG_TEST_ROM") else DEFAULT
 pytestmark = pytest.mark.skipif(not ROM.is_file(), reason="no Dr. Mario ROM (set DMG_TEST_ROM)")
 
@@ -24,14 +24,14 @@ IDLE = [mcp_app.Action(frames=10)]
 
 @pytest.fixture
 def real(tmp_path, monkeypatch):
-    rom_dir = tmp_path / ".pyboy-mcp" / "roms"
+    rom_dir = tmp_path / ".dmg-cartographer" / "roms"
     rom_dir.mkdir(parents=True)
     shutil.copy(ROM, rom_dir / ROM.name)
     c = PyBoyController()
     for mod in (mcp_app, raw, inv):
         monkeypatch.setattr(mod, "CONTROLLER", c)
     monkeypatch.setitem(mcp_app.SENSITIVE_ENABLED, "write", True)
-    raw.game("load", rom_path=str(tmp_path / ".pyboy-mcp" / "roms" / ROM.name))
+    raw.game("load", project_dir=str(tmp_path), rom_name=ROM.name)
     raw.step(frames=60)
     raw.state("save", name="start")
     yield c

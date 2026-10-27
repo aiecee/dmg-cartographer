@@ -18,7 +18,7 @@ IDLE = [{"frames": 2}]
 
 @pytest.fixture
 def emu(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     (roms / "puzzle.gb").write_bytes(make_rom())
     c = PyBoyController(BankedSim)
@@ -189,7 +189,7 @@ def test_replay_mismatch_names_its_likely_source(emu):
 
 def test_results_are_dropped_when_a_different_rom_loads(emu, tmp_path):
     rid = emu.branch_experiment("base", [{"name": "idle", "actions": IDLE}])["result_id"]
-    (tmp_path / ".pyboy-mcp" / "roms" / "other.gb").write_bytes(make_rom(b"OTHER"))
+    (tmp_path / ".dmg-cartographer" / "roms" / "other.gb").write_bytes(make_rom(b"OTHER"))
     emu.load_game(str(tmp_path), "other.gb")
     with pytest.raises(ValueError, match="unknown result"):
         emu.get_result(rid)

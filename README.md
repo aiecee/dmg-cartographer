@@ -39,12 +39,15 @@ The server is launched by `.mcp.json`. It currently runs `uvx --from git+https:/
 ## First calls
 
 ```text
-game(action="list", rom_dir="/absolute/path/to/roms")
-game(action="load", rom_path="/absolute/path/to/roms/game.gb")
+game(action="load", project_dir="/absolute/path/to/project", rom_path="/anywhere/game.gb")
+game(action="list", project_dir="/absolute/path/to/project")
+game(action="load", project_dir="/absolute/path/to/project", rom_name="game.gb")
 step(frames=60)
 state(action="save", name="start")
 screen()
 ```
+
+The first call copies `game.gb` into `<project>/.dmg-cartographer/roms/`, and the game runs from that copy. Moving or deleting the original doesn't break the project. After that, `rom_name` loads it again.
 
 `step` is the only tool that advances time. Everything else reads, saves or compares.
 
@@ -54,7 +57,7 @@ The server registers about 21 tools:
 
 | Tool | Purpose |
 | --- | --- |
-| `game` | list ROMs, load one by absolute path, close, reset, status |
+| `game` | list the project's ROMs, load one (copying it in if needed), close, reset, status |
 | `step`, `button` | advance exactly N frames; hold or release buttons |
 | `screen` | the current frame as PNG, with optional overlays |
 | `inspect_video` | tilemap, tiles, OAM sprites, palettes, the game-area matrix |
@@ -79,23 +82,21 @@ Every result has `frame`, `rom_sha1`, `held_buttons` and a `data` object whose `
 
 ## Where data goes
 
-Each ROM gets one folder. Its name is a slug of the file name followed by the first 8 characters of its SHA-1:
+Everything lives in a `.dmg-cartographer/` folder at the root of your project, created on first use. ROMs go in `roms/`, and each ROM gets one folder named with a slug of its file name and the first 8 characters of its SHA-1:
 
 ```text
-<data root>/Dr-Mario-World-Rev-1-d31d67d0/
-  save.ram, save.rtc        battery saves
-  checkpoints/              <name>.state and <name>.json
-  scenes/<name>/            scene.json, capture.png, state.state
-  datasets/<name>/          manifest.json, scenes.jsonl, images/, states/ (optional)
-  maps/map.json             the ROM's state map, used when state_map gets no path
-  replays/, discoveries/, exports/, history.json
+<project>/.dmg-cartographer/
+  roms/                     ROM files, copied in by game(action="load", rom_path=...)
+  Dr-Mario-World-Rev-1-d31d67d0/
+    save.ram, save.rtc      battery saves
+    checkpoints/            <name>.state and <name>.json
+    scenes/<name>/          scene.json, capture.png, state.state
+    datasets/<name>/        manifest.json, scenes.jsonl, images/, states/ (optional)
+    maps/map.json           the ROM's state map, used when state_map gets no path
+    replays/, discoveries/, exports/, history.json
 ```
 
-The data root is:
-
-1. `DMG_CARTOGRAPHER_DIR`, if set (must be absolute);
-2. otherwise `<project>/.pyboy-mcp/` for a ROM kept in `<project>/.pyboy-mcp/roms/`;
-3. otherwise `.dmg-cartographer/` next to the ROM.
+A ROM copied in under a name that already exists is only reused if the bytes match. A different file with the same name is never overwritten; the load fails and asks you to rename one of them.
 
 Data from the earlier flat layout (`saves/`, `checkpoints/`, `scenes/`, `datasets/`, `discoveries/`, `replays/`, `history/`) moves into the ROM folder the first time that ROM is loaded. Files already in the ROM folder are never overwritten, and a second load moves nothing. `exports/` is not moved, because its folders are named by you, not by ROM.
 
@@ -103,7 +104,6 @@ Data from the earlier flat layout (`saves/`, `checkpoints/`, `scenes/`, `dataset
 
 | Variable | Effect |
 | --- | --- |
-| `DMG_CARTOGRAPHER_DIR` | absolute data root for all ROMs |
 | `DMG_CARTOGRAPHER_ENABLE_WRITES=1` | allows `memory(action="write")` |
 | `DMG_CARTOGRAPHER_ENABLE_DEBUG=1` | allows `hook_execution` |
 | `DMG_CARTOGRAPHER_GROUPS` | comma-separated tool groups, `raw,investigate` by default |
@@ -162,7 +162,7 @@ The example map's addresses come from earlier calibration and are marked `hypoth
 uv run pytest
 ```
 
-Most tests use a synthetic emulator and need no ROM. The real-ROM tests read a Dr. Mario ROM from `DMG_TEST_ROM`, or from `~/projects/dr-mario-re/.pyboy-mcp/roms/`. They are skipped when no ROM is found.
+Most tests use a synthetic emulator and need no ROM. The real-ROM tests read a Dr. Mario ROM from `DMG_TEST_ROM`, or from this repo's own `.dmg-cartographer/roms/` (which git ignores). They are skipped when no ROM is found.
 
 ## Limits
 

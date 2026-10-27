@@ -35,7 +35,7 @@ class StatefulSim(SimPyBoy):
 
 @pytest.fixture
 def project(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     (roms / "puzzle.gb").write_bytes(b"puzzle rom")
     (roms / "other.gb").write_bytes(b"other rom")

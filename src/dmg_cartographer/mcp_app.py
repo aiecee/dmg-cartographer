@@ -26,9 +26,11 @@ mcp = MCPServer(
     "PyBoy Controller",
     instructions=(
         "Control one local Game Boy emulator, and record what its memory and screen mean. "
-        "Start with game(action='load', rom_path=<absolute path to a .gb or .gbc file>). game(action='list', "
-        "rom_dir=<absolute folder>) finds ROM files. Each ROM gets one folder holding its checkpoints, scenes, datasets, "
-        "maps, saves and knowledge files, next to the ROM or in DMG_CARTOGRAPHER_DIR. "
+        "Start with game(action='load', project_dir=<absolute project folder>, rom_path=<absolute path to a .gb "
+        "or .gbc file>). The ROM is copied into <project_dir>/.dmg-cartographer/roms/ and runs from the copy. "
+        "After that, game(action='load', project_dir=..., rom_name=<name from game(action='list')>) loads it again. "
+        "Each ROM gets one folder in <project_dir>/.dmg-cartographer/ holding its checkpoints, scenes, datasets, "
+        "maps, saves and knowledge files. "
         "Every result has frame, rom_sha1 and held_buttons, plus a data object whose action field says which "
         "result it is. "
         "The game is PAUSED between calls. Time only moves in step: step(frames=1..600, press, release) or "

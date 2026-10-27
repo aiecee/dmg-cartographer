@@ -63,9 +63,9 @@ class PyBoyController(
         # Execution hooks registered on the current emulator instance: "bank:address" -> record.
         self._hooks: dict[str, dict[str, Any]] = {}
         self._rom_path: Path | None = None
-        # The loaded game's <project>/.pyboy-mcp folder; saves and checkpoints follow it.
+        # The loaded game's <project>/.dmg-cartographer folder; saves and checkpoints follow it.
         self._data_dir: Path | None = None
-        # The loaded game's folder inside .pyboy-mcp: <slug>-<sha1[:8]>. Checkpoints, scenes, maps, saves and
+        # The loaded game's folder inside .dmg-cartographer: <slug>-<sha1[:8]>. Checkpoints, scenes, maps, saves and
         # knowledge files all live under it.
         self._rom_dir: Path | None = None
         self._frames = 0

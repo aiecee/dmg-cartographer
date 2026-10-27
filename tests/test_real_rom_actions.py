@@ -13,14 +13,14 @@ from dmg_cartographer import mcp_app
 from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.tools import raw
 
-DEFAULT = Path.home() / "projects" / "dr-mario-re" / ".pyboy-mcp" / "roms" / "Dr. Mario (World) (Rev 1).gb"
+DEFAULT = Path(__file__).resolve().parents[1] / ".dmg-cartographer" / "roms" / "Dr. Mario (World) (Rev 1).gb"
 ROM = Path(os.environ["DMG_TEST_ROM"]) if os.environ.get("DMG_TEST_ROM") else DEFAULT
 pytestmark = pytest.mark.skipif(not ROM.is_file(), reason="no Dr. Mario ROM (set DMG_TEST_ROM)")
 
 
 @pytest.fixture
 def real(tmp_path, monkeypatch):
-    rom_dir = tmp_path / ".pyboy-mcp" / "roms"
+    rom_dir = tmp_path / ".dmg-cartographer" / "roms"
     rom_dir.mkdir(parents=True)
     shutil.copy(ROM, rom_dir / ROM.name)
     c = PyBoyController()
@@ -28,7 +28,7 @@ def real(tmp_path, monkeypatch):
     monkeypatch.setattr(raw, "CONTROLLER", c)
     monkeypatch.setitem(mcp_app.SENSITIVE_ENABLED, "write", True)
     monkeypatch.setitem(mcp_app.SENSITIVE_ENABLED, "debug", True)
-    raw.game("load", rom_path=str(tmp_path / ".pyboy-mcp" / "roms" / ROM.name))
+    raw.game("load", project_dir=str(tmp_path), rom_name=ROM.name)
     raw.step(frames=60)
     yield c, tmp_path
     raw.game("close")
@@ -41,7 +41,7 @@ def data_of(result):
 
 def test_every_action_matches_its_model(real):
     _, proj = real
-    assert data_of(raw.game("list", rom_dir=str(proj / ".pyboy-mcp" / "roms"))).roms == [ROM.name]
+    assert data_of(raw.game("list", project_dir=str(proj))).roms == [ROM.name]
     assert data_of(raw.game("status")).cartridge_title == "DR.MARIO"
     assert data_of(raw.step(frames=3)).advanced_frames == 3
     assert data_of(raw.step(actions=[mcp_app.Action(frames=2, press=["start"]),
@@ -117,4 +117,4 @@ def test_game_lifecycle_actions(real):
     _, proj = real
     assert data_of(raw.game("reset")).frames_advanced >= 0
     assert data_of(raw.game("close")).loaded is False
-    assert data_of(raw.game("load", rom_path=str(proj / ".pyboy-mcp" / "roms" / ROM.name))).loaded is True
+    assert data_of(raw.game("load", project_dir=str(proj), rom_name=ROM.name)).loaded is True

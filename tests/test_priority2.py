@@ -31,7 +31,7 @@ def make_rom(title: bytes = b"PUZZLE", bad_checksum: bool = False) -> bytes:
 
 @pytest.fixture
 def project(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     (roms / "puzzle.gb").write_bytes(make_rom())
     (roms / "other.gb").write_bytes(make_rom(b"OTHER") + b"\x00" * 16)  # different ROM, different hash
@@ -246,7 +246,7 @@ def test_inspect_cartridge_reports_header_and_checks(emu):
 
 
 def test_inspect_cartridge_flags_a_bad_header(project, tmp_path):
-    (tmp_path / ".pyboy-mcp" / "roms" / "bad.gb").write_bytes(make_rom(bad_checksum=True))
+    (tmp_path / ".dmg-cartographer" / "roms" / "bad.gb").write_bytes(make_rom(bad_checksum=True))
     c = PyBoyController(BankedSim)
     c.load_game(project, "bad.gb")
     assert c.inspect_cartridge()["checks"]["header_checksum"] is False

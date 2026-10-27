@@ -13,7 +13,7 @@ from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.tools import raw, state_map
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT = Path.home() / "projects" / "dr-mario-re" / ".pyboy-mcp" / "roms" / "Dr. Mario (World) (Rev 1).gb"
+DEFAULT = Path(__file__).resolve().parents[1] / ".dmg-cartographer" / "roms" / "Dr. Mario (World) (Rev 1).gb"
 ROM = Path(os.environ["DMG_TEST_ROM"]) if os.environ.get("DMG_TEST_ROM") else DEFAULT
 pytestmark = pytest.mark.skipif(not ROM.is_file(), reason="no Dr. Mario ROM (set DMG_TEST_ROM)")
 EXAMPLE = REPO / "examples" / "dr-mario-rev1.map.json"
@@ -21,14 +21,14 @@ EXAMPLE = REPO / "examples" / "dr-mario-rev1.map.json"
 
 @pytest.fixture
 def real(tmp_path, monkeypatch):
-    rom_dir = tmp_path / ".pyboy-mcp" / "roms"
+    rom_dir = tmp_path / ".dmg-cartographer" / "roms"
     rom_dir.mkdir(parents=True)
     shutil.copy(ROM, rom_dir / ROM.name)
     c = PyBoyController()
     monkeypatch.setattr(mcp_app, "CONTROLLER", c)
     monkeypatch.setattr(raw, "CONTROLLER", c)
     monkeypatch.setattr(state_map, "CONTROLLER", c)
-    raw.game("load", rom_path=str(tmp_path / ".pyboy-mcp" / "roms" / ROM.name))
+    raw.game("load", project_dir=str(tmp_path), rom_name=ROM.name)
     raw.step(frames=60)
     yield c
     raw.game("close")

@@ -47,7 +47,7 @@ CODE = bytes([0x3E, 0x12,        # LD A,$12
 
 @pytest.fixture
 def project(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     rom = bytearray(make_rom())
     rom[0x100:0x100 + len(CODE)] = CODE

@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def emu(tmp_path):
-    roms = tmp_path / ".pyboy-mcp" / "roms"
+    roms = tmp_path / ".dmg-cartographer" / "roms"
     roms.mkdir(parents=True)
     (roms / "puzzle.gb").write_bytes(make_rom())
     c = PyBoyController(BankedSim)

@@ -111,7 +111,7 @@ def validate_discovery(fields: dict[str, Any], *, existing: dict[str, Any] | Non
 
 
 class DiscoveryStore:
-    """One JSON file per ROM SHA-1 under the project's .pyboy-mcp/discoveries/ folder."""
+    """One JSON file per ROM SHA-1 under the project's .dmg-cartographer/discoveries/ folder."""
 
     def __init__(self, directory: Path) -> None:
         self.directory = Path(directory)

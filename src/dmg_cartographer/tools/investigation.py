@@ -172,7 +172,7 @@ def discoveries(action: Literal["save", "list", "export"], name: str | None = No
 @_expose("investigate")
 def export(name: str, candidates: list[str] | None = None, include_screenshots: bool = False,
            markdown: bool = True, max_experiments: int = 200) -> Envelope[ExportReport]:
-    """Write an investigation report to .pyboy-mcp/exports/<name>/ as analysis.json (+ analysis.md, screenshot PNG).
+    """Write an investigation report to .dmg-cartographer/exports/<name>/ as analysis.json (+ analysis.md, screenshot PNG).
 
     Includes ROM metadata, discoveries, experiments with screen summaries, snapshots, search sessions, replays, and
     candidate addresses for the experiment names or ids in candidates. Returns file paths and counts.
