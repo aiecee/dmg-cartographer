@@ -1,6 +1,5 @@
 """Where ROMs and their data live: <project>/.dmg-cartographer/. Absolute ROM paths are copied in. Synthetic emulator."""
 import hashlib
-import json
 
 import pytest
 
@@ -8,7 +7,7 @@ from dmg_cartographer import mcp_app
 from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.tools import raw
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 
 @pytest.fixture
@@ -88,53 +87,3 @@ def test_wrong_rom_paths_are_refused_and_nothing_is_copied(ctl, tmp_path):
         with pytest.raises(ValueError, match=message):
             ctl.add_rom(str(project), bad)
     assert not (project / ".dmg-cartographer").exists()  # refused before anything is created
-
-
-def legacy_layout(root, sha, key):
-    """Files as earlier versions wrote them, for one ROM."""
-    (root / "saves").mkdir(parents=True)
-    (root / "saves" / f"{key}.ram").write_bytes(b"SAVE")
-    (root / "checkpoints" / key).mkdir(parents=True)
-    (root / "checkpoints" / key / "boot.state").write_bytes(b"STATE")
-    (root / "checkpoints" / key / "boot.json").write_text(json.dumps({"frames": 3}))
-    (root / "scenes" / key / "title").mkdir(parents=True)
-    (root / "scenes" / key / "title" / "scene.json").write_text("{}")
-    (root / "discoveries").mkdir()
-    (root / "discoveries" / f"{sha}.json").write_text("{\"discoveries\": {}}")
-    (root / "replays" / sha).mkdir(parents=True)
-    (root / "replays" / sha / "r1.json").write_text("{}")
-    (root / "history").mkdir()
-    (root / "history" / f"{sha}.json").write_text("{\"version\": 1}")
-
-
-def test_flat_layout_is_moved_into_the_rom_folder_once(ctl, tmp_path):
-    _, sha = rom_file(tmp_path / "proj" / ".dmg-cartographer" / "roms")
-    root = tmp_path / "proj" / ".dmg-cartographer"
-    legacy_layout(root, sha, f"puzzle.gb-{sha[:12]}")
-    ctl.load_game(str(tmp_path / "proj"), "puzzle.gb")
-    rom_dir = root / ("puzzle-" + sha[:8])
-    assert (rom_dir / "save.ram").read_bytes() == b"SAVE"
-    assert (rom_dir / "checkpoints" / "boot.state").read_bytes() == b"STATE"
-    assert (rom_dir / "scenes" / "title" / "scene.json").is_file()
-    assert (rom_dir / "discoveries" / f"{sha}.json").is_file()
-    assert (rom_dir / "replays" / sha / "r1.json").is_file()
-    assert (rom_dir / "history.json").read_text() == "{\"version\": 1}"
-    assert not (root / "saves" / f"puzzle.gb-{sha[:12]}.ram").exists()
-    assert ctl.list_checkpoints() == ["boot"]
-
-    ctl.close_game()
-    ctl.load_game(str(tmp_path / "proj"), "puzzle.gb")  # a second load finds nothing left to move
-    assert (rom_dir / "save.ram").read_bytes() == b"SAVE"
-
-
-def test_migration_never_overwrites_a_file_already_in_the_rom_folder(ctl, tmp_path):
-    _, sha = rom_file(tmp_path / "proj" / ".dmg-cartographer" / "roms")
-    root = tmp_path / "proj" / ".dmg-cartographer"
-    key = f"puzzle.gb-{sha[:12]}"
-    legacy_layout(root, sha, key)
-    rom_dir = root / ("puzzle-" + sha[:8])
-    rom_dir.mkdir(parents=True)
-    (rom_dir / "save.ram").write_bytes(b"NEWER")
-    ctl.load_game(str(tmp_path / "proj"), "puzzle.gb")
-    assert (rom_dir / "save.ram").read_bytes() == b"NEWER"
-    assert (root / "saves" / f"{key}.ram").read_bytes() == b"SAVE"  # left in place for the user to decide

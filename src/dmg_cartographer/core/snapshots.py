@@ -114,7 +114,7 @@ class SnapshotMixin:
         if named:
             raise ValueError(f"snapshot name {ref!r} is ambiguous ({[s['id'] for s in named]}); use an id")
         raise ValueError(f"unknown snapshot {ref!r} (it may have been evicted or discarded after a ROM change); "
-                         f"call list_snapshots")
+                         f"call snapshot(action='list')")
 
 
     def delete_snapshot(self, snapshot: str) -> dict[str, Any]:

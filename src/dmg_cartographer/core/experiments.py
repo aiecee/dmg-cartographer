@@ -123,7 +123,7 @@ class ExperimentMixin:
         return None  # some runs changed the value and some did not: no single rule fits
 
     def _suggest_validation(self, candidate: dict[str, Any], chosen: list[dict[str, Any]]) -> dict[str, Any] | None:
-        """A ready-to-run investigate_validate call, built from every chosen experiment (unchanged counts as 0)."""
+        """A ready-to-run experiment(action='validate') call, built from every chosen experiment (unchanged counts as 0)."""
         address = int(candidate["address"], 16)
         by_name: dict[str, list[int]] = {}
         actions_by_name: dict[str, Any] = {}
@@ -142,7 +142,7 @@ class ExperimentMixin:
         return {"address": candidate["address"], "expected": expected,
                 "experiments": {n: actions_by_name[n] for n in expected},
                 "repeats": 2,
-                "next": ("run investigate_validate from the same checkpoint with these arguments. A supported "
+                "next": ("run experiment(action='validate') from the same checkpoint with these arguments. A supported "
                          "result is still an experiment result, not a verified discovery.")}
 
 
@@ -175,7 +175,7 @@ class ExperimentMixin:
         if not isinstance(compare, list) or not compare:
             raise ValueError(f"compare must be a non-empty list from {list(BRANCH_COMPARE)}")
         if "sprites" in compare:
-            raise ValueError("compare 'sprites' is not implemented yet (planned with inspect_sprites)")
+            raise ValueError("compare 'sprites' is not implemented yet (planned)")
         unknown = [c for c in compare if c not in BRANCH_COMPARE]
         if unknown:
             raise ValueError(f"unknown compare entries {unknown}; choose from {list(BRANCH_COMPARE)}")
@@ -244,13 +244,6 @@ class ExperimentMixin:
                 out["result_id"] = self._store_result("branch", out)
                 return out
 
-
-    def watch_memory(self, addresses: list[Any], frames: int, sample_every: int = 1,
-                     record_changes_only: bool = True, actions: list[dict[str, Any]] | None = None,
-                     max_events: int = 200) -> dict[str, Any]:
-        """Memory-only watch, kept for compatibility. investigate_watch takes the wider monitor set."""
-        return self.investigate_watch({"addresses": addresses}, frames, sample_every, record_changes_only,
-                                      actions, max_events)
 
     WATCH_KINDS = frozenset({"addresses", "sprites", "tiles", "screen_region", "cpu"})
 
@@ -576,7 +569,7 @@ class ExperimentMixin:
                 "limitations": [
                     "These are experiments from one checkpoint with the named inputs. They do not show what the "
                     "address means.",
-                    "Repeat from other checkpoints, then record the discovery with investigate_save_discovery; "
+                    "Repeat from other checkpoints, then record the discovery with discoveries(action='save'); "
                     "verified status needs cited experiments."],
             }
 

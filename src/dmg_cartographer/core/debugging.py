@@ -17,8 +17,8 @@ class DebugMixin:
             game = self._require_game()
             state = decode.cpu_state(read_registers(game))
             state.update({"frame": self._frames, "held_buttons": sorted(self._held),
-                          "rom_bank_context": ("not exposed by PyBoy's public API; read ROM with inspect_rom and an "
-                                               "explicit bank, or use disassemble_rom")})
+                          "rom_bank_context": ("not exposed by PyBoy's public API; read ROM with inspect_code(kind='rom') and an "
+                                               "explicit bank, or use inspect_code(kind='disasm')")})
             return state
 
 
@@ -28,7 +28,7 @@ class DebugMixin:
         with self._lock:
             rom_path = self._rom_path
             if rom_path is None:
-                raise RuntimeError("No game loaded. Call load_game first.")
+                raise RuntimeError("No game loaded. Load a ROM first with game(action='load').")
             rom = rom_path.read_bytes()
             data = decode.read_rom(rom, bank, address, length)
             result = {"bank": bank, "address": f"0x{address:04X}", "length": length,
@@ -78,7 +78,7 @@ class DebugMixin:
             raise ValueError("count must be 1..64 instructions")
         with self._lock:
             if self._rom_path is None:
-                raise RuntimeError("No game loaded. Call load_game first.")
+                raise RuntimeError("No game loaded. Load a ROM first with game(action='load').")
             rom = self._rom_path.read_bytes()
             bank_end = 0x4000 if bank == 0 else 0x8000
             span = min(count * 3, bank_end - address) if isinstance(address, int) and 0 <= address < bank_end else 0

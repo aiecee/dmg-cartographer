@@ -23,7 +23,7 @@ class Action(BaseModel):
     release: list[Button] = Field(default_factory=list)
 
 mcp = MCPServer(
-    "PyBoy Controller",
+    "dmg-cartographer",
     instructions=(
         "Control one local Game Boy emulator, and record what its memory and screen mean. "
         "Start with game(action='load', project_dir=<absolute project folder>, rom_path=<absolute path to a .gb "

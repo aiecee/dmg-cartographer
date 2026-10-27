@@ -50,7 +50,7 @@ class MemoryMixin:
                 for i, v in enumerate(values):
                     game.memory[addr + i] = v
                 return {**base, "mode": "write", "frames_advanced": 0, "restored": False,
-                        "warning": "the write persists in the live emulator; use write_memory with "
+                        "warning": "the write persists in the live emulator; use memory(action='write') with "
                                    "experiment_frames to test it and restore"}
 
             with self._restoring():

@@ -35,7 +35,7 @@ class PyBoyController(
 ):
     """Owns the single PyBoy instance and its lock. Behaviour is split across the mixins."""
 
-    STALE_SCREEN = ("screen buffer may be stale: no frame has been rendered since load_game/load_checkpoint; "
+    STALE_SCREEN = ("screen buffer may be stale: no frame has been rendered since the ROM or a checkpoint was loaded; "
                     "advance at least 1 frame for a freshly rendered screen")
 
 
@@ -53,7 +53,7 @@ class PyBoyController(
         self._next_id = {"snap": 1, "exp": 1, "search": 1, "result": 1}
         # Stored branch and replay results, by result id (in memory, this session only).
         self._results: OrderedDict[str, dict[str, Any]] = OrderedDict()
-        # False until a rendered tick follows load_game/load_checkpoint: the screen buffer may be stale.
+        # False until a rendered tick follows a ROM or checkpoint load: the screen buffer may be stale.
         self._screen_fresh = False
         self._lock = threading.RLock()
         self._pyboy: Any | None = None

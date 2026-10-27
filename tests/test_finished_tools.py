@@ -8,7 +8,7 @@ import pytest
 from dmg_cartographer import analysis
 from dmg_cartographer.core.controller import PyBoyController
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 PIECE = 0xC100
 LEFT = [{"press": ["left"], "frames": 1}, {"release": ["left"], "frames": 1}]
@@ -119,7 +119,7 @@ def test_watch_limits_and_monitor_validation(emu):
 
 
 def test_memory_only_watch_keeps_its_old_shape(emu):
-    out = emu.watch_memory(["0xC100"], frames=2, actions=[{"press": ["left"], "frames": 2}])
+    out = emu.investigate_watch({"addresses": ["0xC100"]}, frames=2, actions=[{"press": ["left"], "frames": 2}])
     assert out["events"] and out["events"][0]["address"] == "0xC100"
     assert set(out) >= {"start_frame", "end_frame", "advanced_frames", "samples", "change_count", "events"}
 

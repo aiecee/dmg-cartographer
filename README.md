@@ -98,7 +98,6 @@ Everything lives in a `.dmg-cartographer/` folder at the root of your project, c
 
 A ROM copied in under a name that already exists is only reused if the bytes match. A different file with the same name is never overwritten; the load fails and asks you to rename one of them.
 
-Data from the earlier flat layout (`saves/`, `checkpoints/`, `scenes/`, `datasets/`, `discoveries/`, `replays/`, `history/`) moves into the ROM folder the first time that ROM is loaded. Files already in the ROM folder are never overwritten, and a second load moves nothing. `exports/` is not moved, because its folders are named by you, not by ROM.
 
 ## Environment variables
 

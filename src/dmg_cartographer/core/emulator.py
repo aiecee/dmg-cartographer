@@ -11,7 +11,6 @@ from typing import Any
 
 from dmg_cartographer.core.shared import BUTTONS, MAX_ACTIONS, MAX_BATCH_FRAMES, MAX_FRAMES, ROM_EXTENSIONS, atomic_write
 from dmg_cartographer import analysis
-from dmg_cartographer.core import migration
 from dmg_cartographer.knowledge import replay
 
 
@@ -20,7 +19,7 @@ class EmulatorMixin:
 
     @staticmethod
     def _data_dir_for(project_dir: str) -> Path:
-        """Return <project_dir>/.dmg-cartographer, creating roms/, saves/ and checkpoints/ inside it."""
+        """Return <project_dir>/.dmg-cartographer, creating it and its roms/ folder if missing."""
         if not isinstance(project_dir, str) or not os.path.isabs(project_dir):
             raise ValueError(f"project_dir must be an absolute path to your project folder, got {project_dir!r}")
         project = Path(project_dir).resolve()
@@ -128,7 +127,6 @@ class EmulatorMixin:
             key = f"{path.name}-{sha1[:12]}"
             rom_dir = data_dir / self._rom_folder_name(path.name, sha1)
             rom_dir.mkdir(parents=True, exist_ok=True)
-            migration.migrate_legacy(data_dir, rom_dir, key, sha1)
             ram_path, rtc_path = self._save_paths(rom_dir)
             ram_file = ram_path.open("rb") if ram_path.is_file() else None
             rtc_file = rtc_path.open("rb") if rtc_path.is_file() else None
@@ -355,7 +353,7 @@ class EmulatorMixin:
 
     def _loaded_identity(self) -> tuple[str, str, Path]:
         if self._pyboy is None or self._rom_sha1 is None or self._rom_dir is None or self._rom_path is None:
-            raise RuntimeError("No game loaded. Call load_game first.")
+            raise RuntimeError("No game loaded. Load a ROM first with game(action='load').")
         return self._rom_sha1, self._rom_name, self._rom_dir
 
     def _folder_for_sha(self, sha1: str) -> Path:

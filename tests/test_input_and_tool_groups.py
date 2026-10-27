@@ -1,4 +1,4 @@
-"""Level 1 input/reset/palette methods, and tool-group registration (real server, real MCP registration).
+"""Input, reset and palette methods, and tool-group registration (real server, real MCP registration).
 
 Controller tests use the synthetic emulator (mocked). The group tests start the real server module in a subprocess,
 so they check what a client would actually see.
@@ -13,7 +13,7 @@ import pytest
 
 from dmg_cartographer.core.controller import PyBoyController
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -88,7 +88,7 @@ def _tool_names(env_extra: dict) -> set[str]:
     return set(json.loads(out.stdout.strip().splitlines()[-1]))
 
 
-SENSITIVE = {"raw_hook_execution"}
+SENSITIVE = {"hook_execution"}
 
 
 def test_default_hides_sensitive_tools_but_keeps_everything_else():

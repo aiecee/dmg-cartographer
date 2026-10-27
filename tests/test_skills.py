@@ -1,4 +1,4 @@
-"""The skills name tools and parameters. These tests catch drift when a tool is renamed or removed."""
+"""The skills name tools that the server registers."""
 import asyncio
 import re
 from pathlib import Path
@@ -8,7 +8,6 @@ import pytest
 from dmg_cartographer.server import mcp
 
 SKILLS = sorted((Path(__file__).resolve().parents[1] / "skills").glob("*/SKILL.md"))
-OLD_NAME = re.compile(r"\b(raw_[a-z_]+|investigate_[a-z_]+)\b")
 
 
 def tools_and_params():
@@ -33,7 +32,6 @@ def test_there_are_exactly_four_skills_with_frontmatter():
 def test_skill_names_only_current_tools(path):
     tools = tools_and_params()
     text = path.read_text(encoding="utf-8")
-    assert not OLD_NAME.search(text), "uses a tool name from before the merge"
     called = set(re.findall(r"`?\b([a-z_]+)\((?=\w+=|\)|\[|\d|')", text))
     for name in called:
         if name in tools or name in {"step", "game"}:

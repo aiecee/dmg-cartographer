@@ -406,7 +406,7 @@ def correlate_with_screen(records: list[dict[str, Any]], max_results: int = 20) 
     return {"samples": n, "addresses_considered": len(addresses), "candidate_count": len(candidates),
             "candidates": candidates[:max_results], "truncated": len(candidates) > max_results,
             "note": ("Correlation between recorded observations only. The screen flag says that something "
-                     "visible changed, not which object moved. Confirm with investigate_validate.")}
+                     "visible changed, not which object moved. Confirm with experiment(action='validate').")}
 
 
 def sprite_changes(before: list[dict[str, Any]], after: list[dict[str, Any]], max_items: int = 50) -> dict[str, Any]:

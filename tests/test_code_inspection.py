@@ -11,7 +11,7 @@ from dmg_cartographer import decode
 from dmg_cartographer import disasm
 from dmg_cartographer.core.controller import PyBoyController
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 
 class HookSim(BankedSim):

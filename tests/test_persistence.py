@@ -6,7 +6,7 @@ import pytest
 from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.knowledge import history
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 LEFT = [{"press": ["left"], "frames": 1}, {"release": ["left"], "frames": 1}]
 IDLE = [{"frames": 2}]
@@ -116,14 +116,17 @@ def test_unified_discoveries_tool_dispatches_and_rejects_bad_actions():
     async def call(args):
         async with Client(server.mcp) as client:
             try:
-                return await client.call_tool("investigate_discoveries", args)
+                result = await client.call_tool("discoveries", args)
+                text = " ".join(getattr(part, "text", "") for part in result.content)
+                return SimpleNamespace(is_error=result.is_error, error=text)
             except Exception as exc:  # the SDK raises on tool errors in this version
                 return SimpleNamespace(is_error=True, error=str(exc))
 
     bad = asyncio.run(call({"action": "delete"}))
-    assert bad.is_error
+    assert bad.is_error and "unknown tool" not in bad.error.lower()
+    assert "action" in bad.error
     no_name = asyncio.run(call({"action": "save"}))
-    assert no_name.is_error
+    assert no_name.is_error and "unknown tool" not in no_name.error.lower()  # the SDK hides the ValueError text
 
 
 def test_verified_discovery_cannot_cite_an_experiment_that_contradicted_it(project):

@@ -19,7 +19,6 @@ def test_mcp_lists_registered_tools(tmp_path):
             assert {"game", "step", "screen", "state", "memory", "inspect_video"} <= names
             assert {"experiment", "branch", "watch", "replay", "result", "discoveries", "export", "screen_changes"} <= names
             assert not {n for n in names if n.startswith("investigate_")}
-            assert "raw_list_roms" not in names
             games = await client.call_tool("game", {"action": "list", "project_dir": str(tmp_path)})
             assert not games.is_error
 

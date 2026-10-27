@@ -11,7 +11,7 @@ from PIL import Image
 from dmg_cartographer import analysis
 from dmg_cartographer.core.controller import PyBoyController
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 
 class Tiles:

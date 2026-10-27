@@ -8,8 +8,8 @@ import pytest
 
 from dmg_cartographer.core.controller import PyBoyController
 from test_inspection import BankedSim
-from test_priority2 import make_rom
-from test_priority3 import HookSim
+from test_knowledge import make_rom
+from test_code_inspection import HookSim
 
 IDLE = [{"frames": 2}]
 

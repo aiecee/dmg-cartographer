@@ -1,1 +1,1 @@
-"""MCP tool modules: raw (Level 1) and investigation (Level 2). Importing them registers the tools."""
+"""MCP tool modules: the raw and investigate groups, scene and state_map. Importing them registers the tools."""

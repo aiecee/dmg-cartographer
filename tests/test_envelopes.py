@@ -10,7 +10,7 @@ from dmg_cartographer import mcp_app
 from dmg_cartographer.core.controller import PyBoyController
 from dmg_cartographer.tools import raw
 from test_inspection import BankedSim
-from test_priority2 import make_rom
+from test_knowledge import make_rom
 
 
 @pytest.fixture

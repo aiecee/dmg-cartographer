@@ -210,12 +210,12 @@ def test_inspect_tiles_images_grid_and_limits(emu):
             emu.inspect_tiles(**bad)
 
 
-# ---------- watch_memory ----------
+# ---------- watch (memory addresses) ----------
 
 def test_watch_records_exact_changes_and_inputs(emu):
     # buttons stay held until released, so release "left" at the start of the idle part
     actions = [{"press": ["left"], "release": ["right"], "frames": 3}, {"release": ["left"], "frames": 7}]
-    result = emu.watch_memory(["0xC100"], frames=10, actions=actions)
+    result = emu.investigate_watch({"addresses": ["0xC100"]}, frames=10, actions=actions)
     assert result["advanced_frames"] == 10 and result["requested_frames"] == 10
     assert result["change_count"] == 3
     assert [(e["frame"], e["previous"], e["current"]) for e in result["events"]] == [(1, 84, 83), (2, 83, 82),
@@ -228,9 +228,9 @@ def test_watch_records_exact_changes_and_inputs(emu):
 
 def test_watch_sampling_window_and_bounded_events(emu):
     # right is still held from the fixture, so release it first to observe a truly idle piece
-    idle = emu.watch_memory(["0xC100"], frames=10, sample_every=5, actions=[{"release": ["right"], "frames": 10}])
+    idle = emu.investigate_watch({"addresses": ["0xC100"]}, frames=10, sample_every=5, actions=[{"release": ["right"], "frames": 10}])
     assert idle["samples"] == 2 and idle["change_count"] == 0 and idle["events"] == []
-    bounded = emu.watch_memory(["0xC100"], frames=5, max_events=2,
+    bounded = emu.investigate_watch({"addresses": ["0xC100"]}, frames=5, max_events=2,
                                actions=[{"press": ["left"], "release": ["right"], "frames": 5}])
     assert len(bounded["events"]) == 2 and bounded["events_truncated"] is True
     assert bounded["change_count"] == 5 and bounded["advanced_frames"] == 5
@@ -238,12 +238,12 @@ def test_watch_sampling_window_and_bounded_events(emu):
 
 def test_watch_validation(emu):
     with pytest.raises(ValueError, match="exactly"):
-        emu.watch_memory(["0xC100"], frames=5, actions=[{"frames": 4}])
+        emu.investigate_watch({"addresses": ["0xC100"]}, frames=5, actions=[{"frames": 4}])
     for kwargs in [dict(addresses=[]), dict(addresses=["0xC100", "0xC100"]), dict(addresses=["0x10000"]),
                    dict(addresses=["0xC100"], frames=0), dict(addresses=["0xC100"], frames=5, sample_every=6)]:
         params = {"addresses": ["0xC100"], "frames": 5, **kwargs}
         with pytest.raises(ValueError):
-            emu.watch_memory(**params)
+            emu.investigate_watch({"addresses": params.pop("addresses")}, **params)
 
 
 # ---------- write_memory ----------
