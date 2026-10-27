@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "dmg-cartographer": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/aiecee/dmg-cartographer", "dmg-cartographer"]
+    }
+  }
+}

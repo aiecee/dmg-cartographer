@@ -1,0 +1,8 @@
+{
+  "name": "dmg-cartographer",
+  "version": "0.1.0",
+  "description": "Reverse-engineer Game Boy games: a PyBoy MCP server with frame-exact control, memory and screen investigation, scenes and datasets for ML, and four task skills.",
+  "author": {"name": "Matt Collinge"},
+  "license": "MIT",
+  "keywords": ["game-boy", "pyboy", "reverse-engineering", "mcp", "emulator"]
+}

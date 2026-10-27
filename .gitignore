@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# dmg-cartographer local data (ROM folders, saves, checkpoints, datasets)
+.pyboy-mcp/
+.dmg-cartographer/
