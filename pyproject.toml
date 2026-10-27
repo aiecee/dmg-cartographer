@@ -1,0 +1,29 @@
+[project]
+name = "dmg-cartographer"
+version = "0.1.0"
+description = "Game Boy reverse-engineering MCP server and skills, built on PyBoy"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+  "mcp[cli]>=2.0,<3.0",
+  "pyboy>=2.0,<3.0",
+  "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+dmg-cartographer = "dmg_cartographer.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dmg_cartographer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

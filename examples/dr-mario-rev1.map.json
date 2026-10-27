@@ -1,0 +1,24 @@
+{
+  "format": "dmg-cartographer-map",
+  "format_version": 1,
+  "rom": "Dr. Mario (World) (Rev 1).gb",
+  "rom_sha1": "d31d67d0682515c7c85deaa1752b02231150e5bf",
+  "fields": [
+    {
+      "name": "board",
+      "address": "0xC800",
+      "type": "uint8",
+      "shape": [16, 8],
+      "status": "hypothesis",
+      "note": "Settled board cells, row-major, row 0 at the top. Taken from earlier calibration, not yet verified here. Lookup labels are unknown."
+    },
+    {
+      "name": "score_bytes",
+      "address": "0xC0A0",
+      "type": "uint8",
+      "shape": [4],
+      "status": "hypothesis",
+      "note": "Four bytes in address order. Not a numeric score: the encoding is not verified."
+    }
+  ]
+}

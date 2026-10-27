@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aiecee/dmg-cartographer/map.schema.json",
+  "title": "dmg-cartographer state map, format_version 1",
+  "description": "Where a Game Boy game keeps its state. Read with dmg_cartographer.state_map.load_map and read_state. The reader also checks rules JSON Schema cannot express: regions, byte budgets and bit ranges.",
+  "type": "object",
+  "required": ["format", "format_version", "rom", "rom_sha1", "fields"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {"const": "dmg-cartographer-map"},
+    "format_version": {"const": 1},
+    "rom": {"type": "string", "minLength": 1, "description": "The ROM file name."},
+    "rom_sha1": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "fields": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/field"}
+    }
+  },
+  "$defs": {
+    "address": {
+      "description": "A WRAM (0xC000-0xDFFF) or HRAM (0xFF80-0xFFFE) address, as an integer or a hex string.",
+      "oneOf": [
+        {"type": "integer", "minimum": 0, "maximum": 65535},
+        {"type": "string", "pattern": "^0x[0-9A-Fa-f]{1,4}$"}
+      ]
+    },
+    "field": {
+      "type": "object",
+      "required": ["name", "address", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$"},
+        "address": {"$ref": "#/$defs/address"},
+        "type": {"enum": ["uint8", "int8", "uint16", "int16", "bits"]},
+        "endian": {"enum": ["little", "big"], "description": "16-bit types only. Defaults to little."},
+        "bit": {"type": "integer", "minimum": 0, "maximum": 7, "description": "bits type only."},
+        "width": {"type": "integer", "minimum": 1, "maximum": 8, "description": "bits type only. bit + width must not exceed 8."},
+        "shape": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "integer", "minimum": 1},
+          "description": "Makes the field a nested array, row-major. The product of the dimensions is at most 256."
+        },
+        "status": {"enum": ["hypothesis", "verified"], "default": "hypothesis"},
+        "lookup": {
+          "type": "object",
+          "propertyNames": {"pattern": "^-?[0-9]+$"},
+          "additionalProperties": {"type": "string", "minLength": 1},
+          "description": "Raw value (as a string) to label. Applies to each array element."
+        },
+        "note": {"type": "string", "maxLength": 500}
+      }
+    }
+  }
+}
