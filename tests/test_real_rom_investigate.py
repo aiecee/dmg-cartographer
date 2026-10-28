@@ -86,7 +86,7 @@ def test_discoveries_export_and_screen_changes(real, tmp_path):
                                  confidence="medium", evidence=["exp-0001"]))
     assert saved.action == "save" and saved.status == "hypothesis"
     listed = data(inv.discoveries("list"))
-    assert listed.count >= 1
+    assert listed.discoveries_total >= 1
     assert data(inv.discoveries("export", name="probe-export")).count >= 1
     report = data(inv.export("probe-export", None, False, True, 20))
     assert report.counts.experiments >= 1

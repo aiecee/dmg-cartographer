@@ -71,7 +71,7 @@ The server registers about 21 tools:
 | `scene` | save and export labelled states as a dataset |
 | `state_map` | validate and read a map.json |
 
-Every result has `frame`, `rom_sha1`, `held_buttons` and a `data` object whose `action` says which result it is. The server's instructions and each tool's docstring describe the arguments.
+Every result has `frame`, `rom_sha1`, `held_buttons` and a `data` object whose `action` says which result it is. A list that a limit can cut short, say `matches`, comes with `matches_total` (the count before the cut) and `matches_truncated`. The server's instructions and each tool's docstring describe the arguments.
 
 ## Skills
 

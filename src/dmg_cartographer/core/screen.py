@@ -93,9 +93,7 @@ class ScreenMixin:
                 "frame": self._frames,
                 "lcdc": f"0x{lcdc:02X}", "sprite_height": 16 if lcdc & 0x04 else 8,
                 "cgb_header": header,
-                "count": len(rows), "returned": min(len(rows), max_results),
-                "truncated": len(rows) > max_results,
-                "sprites": rows[:max_results],
+                **analysis.capped("sprites", rows, max_results),
                 "coordinates": "raw = OAM bytes; screen = raw minus (8, 16); screen is the 160x144 viewport",
             }
             return result, pngs

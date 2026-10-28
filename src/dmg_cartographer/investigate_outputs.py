@@ -112,9 +112,9 @@ class ExperimentRankData(Out):
     action: Literal["rank"]
     experiments: list[str]
     addresses_considered: int
-    candidate_count: int
-    truncated: bool
     candidates: list[RankCandidate]
+    candidates_total: int
+    candidates_truncated: bool
     note: str
     suggested_validation: list[SuggestedValidation]
 
@@ -136,7 +136,8 @@ class Correlation(Out):
     direction_when_both: dict[str, int]
     evidence: list[str]
     counterexamples: list[Counterexample]
-    counterexample_count: int
+    counterexamples_total: int
+    counterexamples_truncated: bool
 
 
 class Excluded(Out):
@@ -149,9 +150,9 @@ class ExperimentCorrelateData(Out):
     action: Literal["correlate"]
     samples: int
     addresses_considered: int
-    candidate_count: int
     candidates: list[Correlation]
-    truncated: bool
+    candidates_total: int
+    candidates_truncated: bool
     note: str
     experiments: list[str]
     excluded: list[Excluded]
@@ -207,6 +208,8 @@ class ExperimentValidateData(Out):
     per_action: dict[str, ActionTally]
     confirmations: int
     contradictions: list[Contradiction]
+    contradictions_total: int
+    contradictions_truncated: bool
     runs: list[ValidateRun]
     frames_advanced_total: int
     perturbation: PerturbationResult | None
@@ -234,12 +237,12 @@ class BranchRun(Out):
     completed_actions: int
     held_buttons: list[ButtonName]
     emulator_running: bool
-    changed_count: int
-    unique_change_count: int
     unique_changes: list[UniqueChange]
-    unique_truncated: bool
+    unique_changes_total: int
+    unique_changes_truncated: bool
     changes: dict[Region, list[MemoryChange]]
-    truncated: bool
+    changes_total: int
+    changes_truncated: bool
     screen: ScreenDiff | None = None
 
 
@@ -340,8 +343,11 @@ class WatchResult(Out):
     monitors: WatchMonitors
     addresses: list[AddressRef]
     events: list[WatchEvent]
+    events_total: int
     events_truncated: bool
     input_events: list[InputEvent]
+    input_events_total: int
+    input_events_truncated: bool
     limitation: str
 
 
@@ -378,7 +384,8 @@ class ReplayReplayFields(Out):
     completed: bool
     matched: bool
     mismatches: list[ReplayMismatch]
-    mismatch_count: int
+    mismatches_total: int
+    mismatches_truncated: bool
     requested_frames: int
     advanced_frames: int
     recorded_frames: int
@@ -439,9 +446,9 @@ class DiscoveryList(Out):
     action: Literal["list"]
     rom_sha1: str
     title: str | None
-    count: int
     discoveries: list[DiscoveryRecord]
-    truncated: bool
+    discoveries_total: int
+    discoveries_truncated: bool
 
 
 class DiscoveryExport(Out):
@@ -525,13 +532,17 @@ class SpriteTileSwap(Out):
 class SpriteChanges(Out):
     """Sprite identity is by OAM slot. identity_basis states what the slot match does and does not prove."""
     moved: list[SpriteMove]
-    moved_count: int
+    moved_total: int
+    moved_truncated: bool
     appeared: list[SpriteAppeared]
-    appeared_count: int
+    appeared_total: int
+    appeared_truncated: bool
     disappeared: list[SpriteDisappeared]
-    disappeared_count: int
+    disappeared_total: int
+    disappeared_truncated: bool
     tile_changed_in_place: list[SpriteTileSwap]
-    tile_changed_in_place_count: int
+    tile_changed_in_place_total: int
+    tile_changed_in_place_truncated: bool
     unchanged_on_screen: int
     identity_basis: str
 
@@ -544,9 +555,9 @@ class TileChange(Out):
 
 
 class TileLayerChanges(Out):
-    changed_tiles: int
-    truncated: bool
     changes: list[TileChange]
+    changes_total: int
+    changes_truncated: bool
 
 
 class BackgroundTileChanges(Out):
@@ -568,7 +579,8 @@ class ScreenChangesData(Out):
     pixels: ChangedPixels
     bounding_box: Rect | None
     rectangles: list[ScreenArea]
-    rectangle_count: int
+    rectangles_total: int
+    rectangles_truncated: bool
     cells: ScreenGrid | None = None
     sprites: SpriteChanges | None = None
     background_tiles: BackgroundTileChanges | TilesUnavailable | None = None

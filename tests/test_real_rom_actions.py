@@ -54,7 +54,7 @@ def test_every_action_matches_its_model(real):
     assert data_of(raw.inspect_video("area")).width == 32
     assert data_of(raw.inspect_video("tilemap", width=4, height=4)).layer == "background"
     raw.inspect_video("tiles", width=2, height=2, include_images=True, include_attributes=True)
-    assert data_of(raw.inspect_video("sprites", max_results=5)).count == 40
+    assert data_of(raw.inspect_video("sprites", max_results=5)).sprites_total == 40
     assert set(data_of(raw.inspect_video("palette")).dmg_palettes.model_dump()) == {"BGP", "OBP0", "OBP1"}
 
 

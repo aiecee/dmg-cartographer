@@ -126,3 +126,21 @@ def test_input_errors_reach_the_client_with_their_message(monkeypatch):
     result = asyncio.run(call())
     assert result.is_error
     assert "No game loaded" in result.content[0].text
+
+
+def test_capped_lists_follow_one_shape():
+    """A list X that a limit can cut short has X_total and X_truncated beside it, and nothing else."""
+    from dmg_cartographer import investigate_outputs, map_outputs, outputs, scene_outputs  # noqa: F401 (register models)
+
+    def models(cls):
+        for sub in cls.__subclasses__():
+            yield sub
+            yield from models(sub)
+
+    for model in models(outputs.Out):
+        fields = set(model.model_fields)
+        assert "returned" not in fields, model.__name__
+        for name in fields:
+            if name.endswith("_truncated"):
+                base = name.removesuffix("_truncated")
+                assert {base, base + "_total"} <= fields, (model.__name__, name)

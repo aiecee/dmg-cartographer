@@ -217,7 +217,7 @@ def test_rom_search_finds_bank_0_and_switchable_bank_matches(emu):
     data[0x4F00:0x4F03] = b"\xFA\xA0\xC0"        # LD A,($C0A0) in bank 1
     emu._rom_path.write_bytes(bytes(data))
     out = emu.search_rom("a0 c0")
-    assert out["pattern"] == "A0 C0" and out["truncated"] is False
+    assert out["pattern"] == "A0 C0" and out["matches_truncated"] is False
     assert out["matches"] == [{"bank": 0, "address": "0x0201", "file_offset": "0x000201"},
                               {"bank": 1, "address": "0x4F01", "file_offset": "0x004F01"}]
     assert emu.search_rom("A0 C0", bank=1)["matches"] == [out["matches"][1]]
@@ -230,7 +230,8 @@ def test_rom_search_wildcards_and_cap(emu):
     out = emu.search_rom("CD ?? 12")                 # CALL $1234 at 0x0102
     assert [m["address"] for m in out["matches"]] == ["0x0102"]
     capped = emu.search_rom("00 00", max_results=3)  # the synthetic ROM is mostly zeros
-    assert capped["count"] == 3 and capped["truncated"] is True
+    assert len(capped["matches"]) == 3 and capped["matches_truncated"] is True
+    assert capped["matches_total"] > 3                # counted past the cap
     assert [m["address"] for m in capped["matches"]] == ["0x0000", "0x0001", "0x0002"]  # overlapping
 
 

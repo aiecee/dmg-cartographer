@@ -228,10 +228,9 @@ class Sprite(Out):
 
 class VideoSprites(Out):
     action: Literal["sprites"]
-    count: int
-    returned: int
-    truncated: bool
     sprites: list[Sprite]
+    sprites_total: int
+    sprites_truncated: bool
     frame: int
     lcdc: str
     sprite_height: int
@@ -453,12 +452,12 @@ class MemoryRegionDiff(Out):
     bytes_examined: int
     changed_count: int
     filter: str
-    match_count: int
-    returned: int
-    truncated: bool
     changes: list[MemoryChange]
-    group_count: int | None = None
+    changes_total: int
+    changes_truncated: bool
     groups: list[MemoryGroup] | None = None
+    groups_total: int | None = None
+    groups_truncated: bool | None = None
 
 
 class CompareMemory(MemoryRegionDiff):
@@ -491,8 +490,9 @@ class ScreenGrid(Out):
     cell_size: int
     columns: int
     rows: int
-    changed_cells: int
     cells: list[GridCell]
+    cells_total: int
+    cells_truncated: bool
 
 
 class ScreenDiff(Out):
@@ -504,8 +504,9 @@ class ScreenDiff(Out):
     threshold: int
     region: Rect | None
     bounding_box: Rect | None = None
-    area_count: int | None = None
     areas: list[ScreenArea] | None = None
+    areas_total: int | None = None
+    areas_truncated: bool | None = None
     grid: ScreenGrid | None = None
     warning: str | None = None
 
@@ -544,8 +545,8 @@ class SearchResult(Out):
     candidates_remaining: int
     eliminated: int
     matches: list[SearchMatch]
-    returned: int
-    truncated: bool
+    matches_total: int
+    matches_truncated: bool
     region: str
     dtype: str
     endianness: str
@@ -713,9 +714,9 @@ class CodeSearch(Out):
     action: Literal["search"]
     pattern: str
     bank: int | None = None
-    count: int
-    truncated: bool
     matches: list[RomMatch]
+    matches_total: int
+    matches_truncated: bool
 
 
 CodeData = Annotated[Union[CodeCartridge, CodeCpu, CodeRom, CodeDisasm, CodeSearch], Field(discriminator="action")]

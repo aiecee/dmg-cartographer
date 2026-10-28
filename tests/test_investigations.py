@@ -54,7 +54,7 @@ def test_correlation_service_on_synthetic_records():
     assert top["evidence"] == ["e1", "e2"] and top["direction_when_both"] == {"+": 1, "-": 1}
     second = out["candidates"][1]
     # e3: memory changed with the screen static; e2: the screen changed while this byte did not
-    assert second["address"] == "0x0020" and second["counterexample_count"] == 2
+    assert second["address"] == "0x0020" and second["counterexamples_total"] == 2
     assert {"experiment": "e3", "kind": "memory changed, screen static"} in second["counterexamples"]
     assert {"experiment": "e2", "kind": "screen changed, memory unchanged"} in second["counterexamples"]
     assert "not proof" not in out["note"] and "Correlation" in out["note"]

@@ -145,7 +145,7 @@ def test_get_discoveries_filters_and_evidence(emu):
     emu.save_discovery("pos_b", "0xC101", "WRAM", confidence="low", evidence=["note"])
     emu.save_discovery("hram_x", "0xFF90", "HRAM", labels=["timer"])
     everything = emu.get_discoveries()
-    assert everything["count"] == 3 and "evidence" not in everything["discoveries"][0]
+    assert everything["discoveries_total"] == 3 and "evidence" not in everything["discoveries"][0]
     assert [d["name"] for d in emu.get_discoveries(address="0xC100")["discoveries"]] == ["pos_a"]
     assert [d["name"] for d in emu.get_discoveries(region="HRAM")["discoveries"]] == ["hram_x"]
     assert [d["name"] for d in emu.get_discoveries(label="player")["discoveries"]] == ["pos_a"]
@@ -169,8 +169,8 @@ def test_discoveries_persist_and_are_isolated_per_rom(emu, project):
 
     other_sha = hashlib.sha1((emu._data_dir / "roms" / "other.gb").read_bytes()).hexdigest()
     fresh.load_game(project, "other.gb")
-    assert fresh.get_discoveries()["count"] == 0
-    assert fresh.get_discoveries(rom_sha1=files[0].stem)["count"] == 1
+    assert fresh.get_discoveries()["discoveries_total"] == 0
+    assert fresh.get_discoveries(rom_sha1=files[0].stem)["discoveries_total"] == 1
     assert other_sha != files[0].stem
 
 
@@ -192,7 +192,7 @@ def test_record_then_replay_matches_exactly(emu):
     assert recorded["stored"] is True and recorded["evidence_ref"] == "replay:left_check"
     before = (emu.status()["timeline_frame"], emu._pyboy.memory.base[PIECE_X])
     replayed = emu.record_replay("left_check", "replay")
-    assert replayed["matched"] is True and replayed["mismatch_count"] == 0
+    assert replayed["matched"] is True and replayed["mismatches_total"] == 0
     assert (emu.status()["timeline_frame"], emu._pyboy.memory.base[PIECE_X]) == before
 
 
@@ -281,7 +281,7 @@ def test_export_writes_bounded_json_markdown_and_screenshots(emu, tmp_path):
     assert report["rom"]["sha1"] == hashlib.sha1(emu._rom_path.read_bytes()).hexdigest()
     assert [d["name"] for d in report["discoveries"]] == ["piece_x"]
     assert report["experiments"][0]["id"] == exp and "screen_summary" in report["experiments"][0]
-    assert report["candidates"]["candidate_count"] >= 1
+    assert report["candidates"]["candidates_total"] >= 1
     assert report["replays"][0]["name"] == "left_check"
     assert "Investigation" in open(files["markdown"]).read()
     assert len(files["screenshots"]) == 1 and open(files["screenshots"][0], "rb").read(4) == b"\x89PNG"

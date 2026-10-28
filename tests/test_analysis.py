@@ -14,7 +14,7 @@ def test_identical_memory_has_no_differences():
     data = bytes(range(256)) * 4
     result = analysis.compare_memory(data, data, 0xC000)
     assert result["bytes_examined"] == 1024
-    assert result["changed_count"] == result["match_count"] == 0
+    assert result["changed_count"] == result["changes_total"] == 0
     assert result["changes"] == [] and result["groups"] == []
 
 
@@ -49,7 +49,7 @@ def test_memory_filters_and_truncation():
     assert addresses(filter="all", current_value=20) == ["0xFF83"]
     assert addresses(filter="all", previous_value=10, current_value=9) == ["0xFF82"]
     limited = analysis.compare_memory(before, after, 0xFF80, max_results=1)
-    assert (limited["match_count"], limited["returned"], limited["truncated"]) == (3, 1, True)
+    assert (limited["changes_total"], len(limited["changes"]), limited["changes_truncated"]) == (3, 1, True)
     with pytest.raises(ValueError):
         analysis.compare_memory(before, after, 0, filter="bigger")
     with pytest.raises(ValueError):
@@ -61,7 +61,7 @@ def test_identical_screens_and_format_normalisation():
     result, png = analysis.compare_screen(rgba, rgba.convert("RGB"))
     assert result["changed_pixels"] == 0
     assert result["bounding_box"] is None and result["areas"] == []
-    assert result["grid"]["changed_cells"] == 0
+    assert result["grid"]["cells_total"] == 0
     assert png is None
     with pytest.raises(ValueError):
         analysis.compare_screen(Image.new("RGB", (10, 10)), blank())
@@ -87,7 +87,7 @@ def test_multi_tile_change_and_separate_areas():
     # The 8x8 block at y=100..107 straddles two cell rows, so it is two cells.
     assert result["areas"] == [{"x": 20, "y": 20, "width": 16, "height": 16, "cells": 9},
                                {"x": 120, "y": 100, "width": 8, "height": 8, "cells": 2}]
-    assert result["grid"]["changed_cells"] == 11
+    assert result["grid"]["cells_total"] == 11
     with Image.open(io.BytesIO(png)) as image:
         assert image.size == (320, 288)
 
@@ -104,7 +104,7 @@ def test_threshold_region_and_modes():
     assert "grid" not in pixel_only and "areas" in pixel_only
     grid_only, _ = analysis.compare_screen(blank(), after, mode="grid")
     # threshold 0 also counts the faint pixel at (5,5): 1 cell there + 4 cells for the white block.
-    assert "areas" not in grid_only and grid_only["grid"]["changed_cells"] == 5
+    assert "areas" not in grid_only and grid_only["grid"]["cells_total"] == 5
 
 
 def test_candidates_require_known_names_and_valid_rules():

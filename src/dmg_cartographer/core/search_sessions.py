@@ -80,17 +80,17 @@ class SearchSessionMixin:
             sess["candidates"] = kept
             sess["frame"] = self._frames
             value_width = width
-            return {
+            result = {
                 "session": session_id, "region": region, "dtype": dtype, "endianness": endianness,
                 "condition": condition, "frame": self._frames, "bank": self._search_bank_info(region, game),
                 "candidates_before": before, "candidates_remaining": len(kept),
                 "eliminated": before - len(kept),
-                "returned": min(len(matches), max_results), "truncated": len(matches) > max_results,
-                "matches": [{"address": f"0x{a:04X}", "previous": self._value(p, dtype, value_width),
-                             "current": self._value(c, dtype, value_width)}
-                            for a, p, c in matches[:max_results]],
+                **analysis.capped("matches", matches, max_results),
                 "evicted_sessions": trimmed,
             }
+            result["matches"] = [{"address": f"0x{a:04X}", "previous": self._value(p, dtype, value_width),
+                                  "current": self._value(c, dtype, value_width)} for a, p, c in result["matches"]]
+            return result
 
 
     def _new_search_id(self) -> str:

@@ -356,11 +356,13 @@ class ExperimentMixin:
             events: list[dict[str, Any]] = []
             inputs: list[dict[str, Any]] = []
             change_count = 0
+            events_total = 0
+            inputs_total = 0
             samples = 0
             since_sample = 0
 
             def sample() -> None:
-                nonlocal last, last_images, change_count, samples
+                nonlocal last, last_images, change_count, samples, events_total
                 now, now_images = read()
                 samples += 1
                 offset = self._frames - start
@@ -369,6 +371,7 @@ class ExperimentMixin:
                     if changed:
                         change_count += 1
                     if changed or not record_changes_only:
+                        events_total += 1
                         if len(events) < max_events:
                             events.append(event(key, last.get(key), value, offset,
                                                 last_images.get("screen"), now_images.get("screen")))
@@ -376,6 +379,7 @@ class ExperimentMixin:
 
             for count, press, release in schedule:
                 if press or release:
+                    inputs_total += 1
                     if len(inputs) < max_events:
                         inputs.append({"frame": self._frames - start, "press": list(press),
                                        "release": list(release)})
@@ -400,8 +404,9 @@ class ExperimentMixin:
                 "change_count": change_count, "record_changes_only": record_changes_only,
                 "monitors": monitored,
                 "addresses": [{"address": f"0x{a:04X}", "region": memwrite.region_of(a)[0]} for a in parsed_addresses],
-                "events": events, "events_truncated": change_count > len(events) and record_changes_only,
-                "input_events": inputs,
+                "events": events, "events_total": events_total, "events_truncated": events_total > len(events),
+                "input_events": inputs, "input_events_total": inputs_total,
+                "input_events_truncated": inputs_total > len(inputs),
                 "limitation": ("frame-sampled: a value written and restored within one sampling window, or several "
                                "times within one frame, is not reported. Sprite, tile and screen monitors see the "
                                "sampled frame only. Not instruction-level."),
@@ -563,7 +568,7 @@ class ExperimentMixin:
                     "inconclusive": "fewer than 2 runs for an expected experiment",
                 }[verdict],
                 "per_action": per_action, "confirmations": len(confirmed_runs),
-                "contradictions": contradictions[:50], "runs": runs,
+                **analysis.capped("contradictions", contradictions, 50), "runs": runs,
                 "frames_advanced_total": sum(r["advanced_frames"] for r in runs),
                 "perturbation": perturbation,
                 "limitations": [
@@ -601,7 +606,8 @@ class ExperimentMixin:
                 "pixels": {"changed": frame["changed_pixels"], "percent_changed": frame["percent_changed"],
                            "examined": frame["pixels_examined"], "threshold": threshold, "region": frame["region"]},
                 "bounding_box": frame.get("bounding_box"),
-                "rectangles": frame.get("areas"), "rectangle_count": frame.get("area_count"),
+                "rectangles": frame.get("areas"), "rectangles_total": frame.get("areas_total"),
+                "rectangles_truncated": frame.get("areas_truncated"),
                 "cells": frame.get("grid"),
                 "basis": "direct: computed from the two stored frames",
             }
@@ -620,9 +626,9 @@ class ExperimentMixin:
                     out["background_tiles"] = analysis.compare_tilemaps(base["tilemaps"], other["tilemaps"], max_items)
                 else:
                     out["background_tiles"] = {"unavailable": "capture both snapshots with include_tilemap=true"}
-            moved = out.get("sprites", {}).get("moved_count", 0)
-            tiles = sum(v.get("changed_tiles", 0) for v in out.get("background_tiles", {}).values()
+            moved = out.get("sprites", {}).get("moved_total", 0)
+            tiles = sum(v.get("changes_total", 0) for v in out.get("background_tiles", {}).values()
                         if isinstance(v, dict))
-            out["summary"] = (f"{frame['changed_pixels']} pixels changed in {frame.get('area_count', 0)} "
+            out["summary"] = (f"{frame['changed_pixels']} pixels changed in {frame.get('areas_total', 0)} "
                               f"rectangle(s); {moved} sprite(s) moved; {tiles} background tile(s) changed")
             return out, png

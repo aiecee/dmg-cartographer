@@ -220,7 +220,7 @@ def test_hram_region_and_bounded_output(controller):
     hram = controller.search_memory(region="HRAM")
     assert hram["candidates_before"] == 127 and hram["bank"] == {"banked": "no", "note": "HRAM is not banked"}
     limited = controller.search_memory(condition="range", low=0, high=255, max_results=5)
-    assert limited["returned"] == 5 and limited["truncated"] is True and len(limited["matches"]) == 5
+    assert limited["matches_truncated"] is True and len(limited["matches"]) == 5
 
 
 def test_search_never_advances_emulator(controller):

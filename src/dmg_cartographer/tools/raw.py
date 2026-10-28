@@ -279,7 +279,7 @@ def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm", "search"], b
     search    -> every place pattern (hex bytes with ?? wildcards, e.g. "A0 C0" or "CD ?? 01") occurs in the ROM
                  file, or only in bank. Addresses are little-endian, so 0xC0A0 is "A0 C0". Each match has bank,
                  address and file_offset; bank and address go straight into kind='disasm'. At most max_results
-                 (1-500); truncated says whether more were left.
+                 (1-500); matches_total counts every match.
     """
     if kind == "cartridge":
         return envelope(_as("cartridge", CONTROLLER.inspect_cartridge()), CodeData)

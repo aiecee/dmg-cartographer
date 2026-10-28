@@ -32,7 +32,8 @@ mcp = MCPServer(
         "Start with game(action='load', project_dir=<absolute project folder>, "
         "rom_path=<absolute path to a .gb or .gbc file>). The game is PAUSED between calls; only step advances "
         "frames, and a pressed button stays held until released. state(action='save'|'load', name) are "
-        "checkpoints. Every result has frame, rom_sha1, held_buttons and a data object. "
+        "checkpoints. Every result has frame, rom_sha1, held_buttons and a data object. A list X that a limit "
+        "can cut short comes with X_total (the count before the cut) and X_truncated. "
         "Never assume RAM addresses carry over between games."
     ),
 )

@@ -53,9 +53,9 @@ def test_sprite_service_reports_direct_moves_and_inferred_identity():
     after = [{"index": 2, "tile_index": 5, "on_screen": True, "screen": {"x": 63, "y": 40}},
              {"index": 4, "tile_index": 7, "on_screen": True, "screen": {"x": 10, "y": 10}}]
     out = analysis.sprite_changes(before, after)
-    assert out["moved_count"] == 1
+    assert out["moved_total"] == 1
     assert out["moved"][0]["delta"] == {"dx": 3, "dy": 0} and out["moved"][0]["inferred_same_object"] is True
-    assert out["tile_changed_in_place_count"] == 1 and out["unchanged_on_screen"] == 0
+    assert out["tile_changed_in_place_total"] == 1 and out["unchanged_on_screen"] == 0
     assert "inference" in out["identity_basis"]
 
 
@@ -65,9 +65,9 @@ def test_identical_frames_report_no_change(emu):
     a = emu.capture_snapshot("a", include_tilemap=True)
     b = emu.capture_snapshot("b", include_tilemap=True)
     out, png = emu.investigate_screen_changes("a", current=False, target="b", include_image=False)
-    assert out["pixels"]["changed"] == 0 and out["rectangle_count"] == 0 and out["bounding_box"] is None
-    assert out["sprites"]["moved_count"] == 0
-    assert out["background_tiles"]["background"]["changed_tiles"] == 0
+    assert out["pixels"]["changed"] == 0 and out["rectangles_total"] == 0 and out["bounding_box"] is None
+    assert out["sprites"]["moved_total"] == 0
+    assert out["background_tiles"]["background"]["changes_total"] == 0
     assert out["summary"].startswith("0 pixels changed")
     assert png is None
 
@@ -79,7 +79,7 @@ def test_one_pixel_move_gives_exact_pixels_and_bounding_box(emu):
     # The old column 80 turns off and the new column 88 turns on, 8 rows each.
     assert out["pixels"]["changed"] == 16
     assert out["bounding_box"] == {"x": 80, "y": 40, "width": 9, "height": 8}
-    assert out["cells"]["changed_cells"] == 2
+    assert out["cells"]["cells_total"] == 2
     assert out["basis"].startswith("direct")
 
 
@@ -103,7 +103,7 @@ def test_background_tile_changes_need_tilemap_snapshots(emu):
     emu.capture_snapshot("t2", include_tilemap=True)
     out, _ = emu.investigate_screen_changes("t1", current=False, target="t2")
     background = out["background_tiles"]["background"]
-    assert background["changed_tiles"] == 1
+    assert background["changes_total"] == 1
     assert background["changes"][0] == {"x": 3, "y": 2, "previous": 0, "current": 77}
     emu.capture_snapshot("plain")  # captured without include_tilemap
     no_tiles, _ = emu.investigate_screen_changes("t1", current=False, target="plain")

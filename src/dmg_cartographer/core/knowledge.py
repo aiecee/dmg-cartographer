@@ -120,9 +120,9 @@ class KnowledgeMixin:
                     if discoveries.matches(r, address=parsed, region=region, label=label,
                                            confidence=confidence, status=status)]
             rows.sort(key=lambda r: r["name"])
-            return {"rom_sha1": sha, "title": data.get("title"), "count": len(rows),
-                    "discoveries": [discoveries.summary(r, include_evidence) for r in rows[:200]],
-                    "truncated": len(rows) > 200}
+            out = {"rom_sha1": sha, "title": data.get("title"), **analysis.capped("discoveries", rows, 200)}
+            out["discoveries"] = [discoveries.summary(r, include_evidence) for r in out["discoveries"]]
+            return out
 
 
     def record_replay(self, name: str, mode: str = "record", checkpoint: str | None = None,
@@ -186,7 +186,7 @@ class KnowledgeMixin:
                     mismatches.append({"field": f"expect.{addr}", "recorded": want, "observed": got})
             advanced = end["frame"] - start["frame"]
             out = {"mode": "replay", "name": name, "completed": True, "matched": not mismatches,
-                   "mismatches": mismatches[:50], "mismatch_count": len(mismatches),
+                   **analysis.capped("mismatches", mismatches, 50),
                    "requested_frames": sequence["requested_frames"], "advanced_frames": advanced,
                    "recorded_frames": stored["requested_frames"],
                    "frames_match_recording": advanced == stored["requested_frames"],

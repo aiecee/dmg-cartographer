@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from dmg_cartographer import analysis
 from dmg_cartographer import decode
 from dmg_cartographer import disasm
 from dmg_cartographer import memwrite
@@ -119,21 +120,11 @@ class DebugMixin:
         if bank is not None:
             decode.check_rom_read(len(rom), bank, 0 if bank == 0 else decode.ROM_BANK, 1)
         banks = [bank] if bank is not None else range(max(1, -(-len(rom) // decode.ROM_BANK)))
-        matches: list[dict[str, Any]] = []
-        truncated = False
-        for b in banks:
-            base = b * decode.ROM_BANK
-            window = 0 if b == 0 else decode.ROM_BANK
-            for m in regex.finditer(rom[base:base + decode.ROM_BANK]):
-                if len(matches) == max_results:
-                    truncated = True
-                    break
-                matches.append({"bank": b, "address": f"0x{window + m.start():04X}",
-                                "file_offset": f"0x{base + m.start():06X}"})
-            if truncated:
-                break
+        matches = [{"bank": b, "address": f"0x{(0 if b == 0 else decode.ROM_BANK) + m.start():04X}",
+                    "file_offset": f"0x{b * decode.ROM_BANK + m.start():06X}"}
+                   for b in banks for m in regex.finditer(rom[b * decode.ROM_BANK:(b + 1) * decode.ROM_BANK])]
         return {"pattern": " ".join("??" if b is None else f"{b:02X}" for b in wanted), "bank": bank,
-                "count": len(matches), "truncated": truncated, "matches": matches}
+                **analysis.capped("matches", matches, max_results)}
 
 
     def hook_execution(self, action: str, bank: int | None = None, address: Any = None,

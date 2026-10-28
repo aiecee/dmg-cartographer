@@ -18,6 +18,11 @@ EXPECTATIONS = ("increase", "decrease", "change", "none")
 MAX_MEMORY_RESULTS = 2000
 
 
+def capped(name: str, rows: list, limit: int) -> dict[str, Any]:
+    """`rows` cut to `limit`, with <name>_total (before the cut) and <name>_truncated beside it."""
+    return {name: rows[:limit], f"{name}_total": len(rows), f"{name}_truncated": len(rows) > limit}
+
+
 def _byte(value: int) -> dict[str, Any]:
     return {"dec": value, "hex": f"0x{value:02X}"}
 
@@ -74,15 +79,11 @@ def compare_memory(before: Sequence[int], after: Sequence[int], start: int, *, f
         "bytes_examined": len(before),
         "changed_count": changed,
         "filter": filter,
-        "match_count": len(matches),
-        "returned": min(len(matches), max_results),
-        "truncated": len(matches) > max_results,
-        "changes": [_change_row(start + i, before[i], after[i]) for i in matches[:max_results]],
+        **capped("changes", matches, max_results),
     }
+    result["changes"] = [_change_row(start + i, before[i], after[i]) for i in result["changes"]]
     if group:
-        groups = _groups([start + i for i in matches])
-        result["group_count"] = len(groups)
-        result["groups"] = groups[:max_results]
+        result.update(capped("groups", _groups([start + i for i in matches]), max_results))
     return result
 
 
@@ -176,13 +177,12 @@ def compare_screen(before: Image.Image, after: Image.Image, *, mode: str = "both
         overall = mask.getbbox()
         areas = _components(cells)
         result["bounding_box"] = _rect(overall) if overall else None
-        result["area_count"] = len(areas)
-        result["areas"] = areas[:max_items]
+        result.update(capped("areas", areas, max_items))
     if mode in ("grid", "both"):
         rows = [{"col": cx, "row": cy, "x": cx * CELL, "y": cy * CELL, "changed_pixels": counts[(cx, cy)]}
                 for cx, cy in sorted(cells, key=lambda c: (c[1], c[0]))]
         result["grid"] = {"cell_size": CELL, "columns": SCREEN_SIZE[0] // CELL, "rows": SCREEN_SIZE[1] // CELL,
-                          "changed_cells": len(rows), "cells": rows[:max_items]}
+                          **capped("cells", rows, max_items)}
 
     png = None
     if include_image:
@@ -202,8 +202,7 @@ def compare_tilemaps(before: dict[str, list[list[int]]], after: dict[str, list[l
         changes = [{"x": x, "y": y, "previous": prev, "current": cur}
                    for y, (row_a, row_b) in enumerate(zip(before[layer], after[layer]))
                    for x, (prev, cur) in enumerate(zip(row_a, row_b)) if prev != cur]
-        out[layer] = {"changed_tiles": len(changes), "truncated": len(changes) > max_results,
-                      "changes": changes[:max_results]}
+        out[layer] = capped("changes", changes, max_results)
     return out
 
 
@@ -301,9 +300,7 @@ def find_memory_candidates(experiments: list[dict[str, Any]], expected_change: d
     return {
         "experiments": [e["id"] for e in experiments],
         "addresses_considered": len(addresses),
-        "candidate_count": len(candidates),
-        "truncated": len(candidates) > max_results,
-        "candidates": candidates[:max_results],
+        **capped("candidates", candidates, max_results),
         "note": "Correlation, not proof. Confirm candidates with new experiments, e.g. from a restored checkpoint.",
     }
 
@@ -338,15 +335,14 @@ def compare_branches(baseline: dict[str, bytes], branches: dict[str, dict[str, b
                         if names == [name])
         rows = {region: [_change_row(address, prev, cur) for address, (prev, cur) in sorted(changes.items())]
                 for region, changes in regions.items()}
-        out["branches"][name] = {
-            "changed_count": sum(len(c) for c in regions.values()),
-            "unique_change_count": len(unique),
-            "unique_changes": [{"region": region, **_change_row(address, *per_branch[name][region][address])}
-                               for region, address in unique[:max_results]],
-            "unique_truncated": len(unique) > max_results,
-            "changes": {region: rows_[:max_results] for region, rows_ in rows.items()},
-            "truncated": any(len(rows_) > max_results for rows_ in rows.values()),
-        }
+        branch = capped("unique_changes", unique, max_results)
+        branch["unique_changes"] = [{"region": region, **_change_row(address, *per_branch[name][region][address])}
+                                    for region, address in branch["unique_changes"]]
+        # changes is one list per region; the total and the flag cover all regions together.
+        branch["changes"] = {region: rows_[:max_results] for region, rows_ in rows.items()}
+        branch["changes_total"] = sum(len(rows_) for rows_ in rows.values())
+        branch["changes_truncated"] = any(len(rows_) > max_results for rows_ in rows.values())
+        out["branches"][name] = branch
     return out
 
 
@@ -399,12 +395,10 @@ def correlate_with_screen(records: list[dict[str, Any]], max_results: int = 20) 
             "agreement": agreement, "samples": n,
             "counts": {"memory_and_screen": a, "memory_only": b, "screen_only": c, "neither": d},
             "direction_when_both": {k: v for k, v in signs.items() if v},
-            "evidence": both, "counterexamples": counter[:20],
-            "counterexample_count": len(counter),
+            "evidence": both, **capped("counterexamples", counter, 20),
         })
     candidates.sort(key=lambda c: (-c["agreement"], -c["counts"]["memory_and_screen"], c["address"]))
-    return {"samples": n, "addresses_considered": len(addresses), "candidate_count": len(candidates),
-            "candidates": candidates[:max_results], "truncated": len(candidates) > max_results,
+    return {"samples": n, "addresses_considered": len(addresses), **capped("candidates", candidates, max_results),
             "note": ("Correlation between recorded observations only. The screen flag says that something "
                      "visible changed, not which object moved. Confirm with experiment(action='validate').")}
 
@@ -445,10 +439,10 @@ def sprite_changes(before: list[dict[str, Any]], after: list[dict[str, Any]], ma
             else:
                 unchanged += 1
     return {
-        "moved": moved[:max_items], "moved_count": len(moved),
-        "appeared": appeared[:max_items], "appeared_count": len(appeared),
-        "disappeared": disappeared[:max_items], "disappeared_count": len(disappeared),
-        "tile_changed_in_place": tile_swapped[:max_items], "tile_changed_in_place_count": len(tile_swapped),
+        **capped("moved", moved, max_items),
+        **capped("appeared", appeared, max_items),
+        **capped("disappeared", disappeared, max_items),
+        **capped("tile_changed_in_place", tile_swapped, max_items),
         "unchanged_on_screen": unchanged,
         "identity_basis": ("OAM slot index is a direct observation. 'inferred_same_object' compares tile IDs only, "
                            "so it is an inference that a game may break."),

@@ -14,7 +14,7 @@ Code analysis is read-only. `inspect_code` never changes the ROM or the emulator
 - `inspect_code(kind='cartridge')`: header facts (title, cartridge type, ROM and RAM size, CGB flag, SHA-1), and integrity checks. Check `all_checks_pass` first.
 - `inspect_code(kind='rom', bank=..., address=..., length=...)`: raw bytes from the ROM file. Bank 0 is 0x0000-0x3FFF; banks 1 and up are 0x4000-0x7FFF. `cross_check` compares them with the emulator's view of the same bank.
 - `inspect_code(kind='disasm', bank=..., address=..., count=...)`: LR35902 instructions from the ROM file, with jump and call targets. This is an interpretation of bytes, not proof that they run.
-- `inspect_code(kind='search', pattern=..., bank=...)`: every place a byte pattern (`??` wildcards) occurs in the ROM file, or in one bank. Each match has `bank`, `address` and `file_offset`. `truncated` says whether `max_results` cut the list short.
+- `inspect_code(kind='search', pattern=..., bank=...)`: every place a byte pattern (`??` wildcards) occurs in the ROM file, or in one bank. Each match has `bank`, `address` and `file_offset`. `matches_total` counts every match, and `matches_truncated` says whether `max_results` cut the list short.
 - `inspect_code(kind='cpu')`: registers, register pairs and flags at the current frame. Interrupt state and the current ROM bank are not exposed by PyBoy's public API.
 - `hook_execution(action='register', bank=..., address=..., label=...)`: count instruction fetches at one address and keep register snapshots. Needs `DMG_CARTOGRAPHER_ENABLE_DEBUG=1`. `list` and `remove` manage hooks. Hooks are cleared on game reset or load.
 - `memory(action='read', ...)` and `search_memory`: find the RAM bytes first, then see what code touches them.
