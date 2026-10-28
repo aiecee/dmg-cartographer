@@ -1,9 +1,11 @@
 """Shared MCP instance, tool-group gating, models and the single PyBoy controller."""
 from typing import Any, Generic, Literal, TypeVar
+import functools
 import os
 
 from dmg_cartographer.core.controller import PyBoyController
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
@@ -56,8 +58,22 @@ def _expose(group: str, read_only: bool = False):
         flag = SENSITIVE_TOOLS.get(fn.__name__)
         if flag is not None and not SENSITIVE_ENABLED[flag]:
             return fn
-        return mcp.tool(annotations=ToolAnnotations(readOnlyHint=True) if read_only else None)(fn)
+        mcp.tool(annotations=ToolAnnotations(readOnlyHint=True) if read_only else None)(_report_errors(fn))
+        return fn
     return decorator
+
+
+def _report_errors(fn):
+    """Re-raise ValueError and RuntimeError as ToolError so the client sees the message.
+
+    The SDK sends only "Error executing tool <name>" for any other exception, which hides every input check."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except (ValueError, RuntimeError) as exc:
+            raise ToolError(str(exc)) from exc
+    return wrapper
 
 MemoryRegion = Literal["WRAM", "HRAM"]
 

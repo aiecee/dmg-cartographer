@@ -96,6 +96,7 @@ def test_compare_and_search(ctl):
     check(raw.compare("memory", baseline=base), "memory")
     check(raw.compare("screen", baseline=base), "screen", images=0)
     check(raw.search_memory("search", condition="unknown"), "search")
+    check(raw.search_memory("search", region="HRAM", condition="unknown"), "search")
     check(raw.search_memory("list"), "list")
 
 
@@ -107,3 +108,20 @@ def test_code_actions(ctl):
 
 def test_hook_list(ctl):
     check(raw.hook_execution("list"), "list")
+
+
+def test_input_errors_reach_the_client_with_their_message(monkeypatch):
+    import asyncio
+    from mcp import Client
+
+    unloaded = PyBoyController(BankedSim)
+    monkeypatch.setattr(mcp_app, "CONTROLLER", unloaded)
+    monkeypatch.setattr(raw, "CONTROLLER", unloaded)
+
+    async def call():
+        async with Client(mcp_app.mcp) as client:
+            return await client.call_tool("step", {"frames": 1})
+
+    result = asyncio.run(call())
+    assert result.is_error
+    assert "No game loaded" in result.content[0].text

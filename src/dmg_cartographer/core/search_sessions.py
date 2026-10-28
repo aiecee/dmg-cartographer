@@ -17,7 +17,7 @@ class SearchSessionMixin:
             return {"banked": "cgb_only", "upper_bank_register": "0xFF70",
                     "upper_bank": int(game.memory[0xFF70]),
                     "note": "0xC000-0xC0FF is fixed; 0xD000-0xDFFF follows the bank in 0xFF70 on CGB"}
-        return {"banked": False}
+        return {"banked": "no", "note": "HRAM is not banked"}
 
 
     def search_memory(self, session: str | None = None, region: str = "WRAM", dtype: str = "uint8",
