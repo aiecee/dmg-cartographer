@@ -20,8 +20,8 @@ def tools_and_params():
     return asyncio.run(fetch())
 
 
-def test_there_are_exactly_four_skills_with_frontmatter():
-    assert [p.parent.name for p in SKILLS] == ["code", "find-variable", "graphics", "navigate"]
+def test_there_are_exactly_five_skills_with_frontmatter():
+    assert [p.parent.name for p in SKILLS] == ["code", "find-variable", "graphics", "navigate", "overview"]
     for path in SKILLS:
         text = path.read_text(encoding="utf-8")
         assert text.startswith("---\nname: " + path.parent.name + "\n"), path
@@ -41,3 +41,14 @@ def test_skill_names_only_current_tools(path):
     for name in tools:
         if re.search(rf"\b{name}\(", text):
             assert name in tools
+
+
+def test_only_side_effect_free_tools_are_marked_read_only():
+    from mcp import Client
+
+    async def fetch():
+        async with Client(mcp) as client:
+            return {t.name for t in (await client.list_tools()).tools if t.annotations and t.annotations.read_only_hint}
+
+    assert asyncio.run(fetch()) == {"screen", "inspect_video", "inspect_code", "compare", "search_memory",
+                                    "result", "screen_changes"}

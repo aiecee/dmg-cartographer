@@ -33,6 +33,8 @@ def game(action: Literal["list", "load", "close", "reset", "status"], project_di
          rom_name: str | None = None, rom_path: str | None = None) -> Envelope[GameData]:
     """Manage the loaded ROM. Everything lives in <project_dir>/.dmg-cartographer/, which is created if missing.
 
+    Use first: load a ROM (needs project_dir) before any other tool; also status, reset and close.
+
     list   -> roms: ROM paths under <project_dir>/.dmg-cartographer/roms/. Needs project_dir (absolute).
     load   -> the emulator state after loading, paused at frame 0. Needs project_dir and one of:
               rom_name, a path from list; or rom_path, an absolute path to a .gb or .gbc file anywhere. A rom_path
@@ -65,6 +67,8 @@ def step(frames: int = 1, press: list[Button] | None = None, release: list[Butto
          actions: list[Action] | None = None, capture: bool = False, scale: int = 2) -> list:
     """Advance the emulator. The only tool that moves time.
 
+    Use to play the game: press buttons and let frames run to reach a menu, level or situation.
+
     Give either frames (1-600) with press/release, or actions (up to 25 steps, 1800 frames in total).
     Presses persist across calls until released. capture=true also returns the resulting screen as a PNG.
     """
@@ -82,16 +86,21 @@ def step(frames: int = 1, press: list[Button] | None = None, release: list[Butto
 
 @_expose("raw")
 def button(button: Button, action: Literal["press", "release"]) -> Envelope[StepData]:
-    """Hold or release one button. No frame advances: the change applies on the next step."""
+    """Hold or release one button. No frame advances: the change applies on the next step.
+
+    Use to hold a button across several steps; step(press=..., release=...) is usually simpler.
+    """
     if action == "press":
         return envelope(_as("button", CONTROLLER.press_button(button)), StepData)
     return envelope(_as("button", CONTROLLER.release_button(button)), StepData)
 
 
-@_expose("raw")
+@_expose("raw", read_only=True)
 def screen(scale: int = 2, overlays: list[Literal["pixels", "tiles", "sprites", "regions"]] | None = None,
            regions: list[LabelledRegion] | None = None) -> list:
     """The current frame as a PNG (scale 1-4, nearest-neighbour).
+
+    Use to look at the game as a picture. To read the board, pieces or HUD as data, use inspect_video.
 
     With overlays or regions the PNG is annotated: pixel ticks, 8px tile grid, sprite boxes, labelled regions.
     Works on a copy; the framebuffer is not changed. Never advances frames.
@@ -103,13 +112,15 @@ def screen(scale: int = 2, overlays: list[Literal["pixels", "tiles", "sprites", 
     return _with_images(_as("screen", {"scale": scale}), ScreenData, CONTROLLER.screen_png(scale))
 
 
-@_expose("raw")
+@_expose("raw", read_only=True)
 def inspect_video(kind: Literal["area", "tilemap", "tiles", "sprites", "palette"],
                   layer: Literal["background", "window"] = "background", x: int = 0, y: int = 0,
                   width: int = 20, height: int = 18, indices: list[int] | None = None,
                   region: ScreenRegion | None = None, include_images: bool = False, include_grid: bool = False,
                   include_attributes: bool = False, max_results: int = 40) -> list:
     """Read the video side of the emulator. Read-only: never advances frames.
+
+    Use to read what is on screen as data, without pixels: sprites (moving pieces, the player) and background or window tiles (boards, HUD digits, text).
 
     kind:
       area     -> PyBoy's generic game-area tile matrix.
@@ -142,6 +153,8 @@ def memory(action: Literal["read", "decode", "write"], address: int | str | None
            max_results: int = 50) -> Envelope[MemoryData]:
     """Read, interpret or write emulated memory.
 
+    Use to read a known address (score, level, piece) or decode bytes into typed fields.
+
     read   -> address (int) and length (up to 256 bytes) of the 64KiB address space.
     decode -> interprets bytes without changing state. Give address + length, or hex_bytes. Field types: uint8,
               int8, uint16, int16 (endianness little/big), bits (offset, bit, width), bcd (length), string (length),
@@ -166,6 +179,8 @@ def memory(action: Literal["read", "decode", "write"], address: int | str | None
 def state(action: Literal["save", "load", "list"], name: str | None = None) -> Envelope[StateData]:
     """Checkpoints: named emulator save states for the loaded ROM.
 
+    Use to save a point in the game and return to it, so trial and error starts from the same place.
+
     save -> writes a checkpoint (name: alphanumeric, '-' or '_').
     load -> restores it; held-button tracking resets.
     list -> checkpoint names for the loaded ROM.
@@ -183,6 +198,8 @@ def snapshot(action: Literal["capture", "list", "delete"], name: str | None = No
              include_tilemap: bool = False) -> Envelope[SnapshotData]:
     """In-memory snapshots of the current state, for comparing later. Never advances frames.
 
+    Use to mark a 'before' moment, then compare or screen_changes against it after an input.
+
     capture -> stores WRAM, HRAM, screen and optional tilemaps; returns an id such as "snap-0003".
                Oldest are evicted past the retention limit; they are dropped when a ROM is loaded.
     list    -> metadata for stored snapshots.
@@ -196,13 +213,15 @@ def snapshot(action: Literal["capture", "list", "delete"], name: str | None = No
     return envelope(_as("delete", CONTROLLER.delete_snapshot(snapshot_id)), SnapshotData)
 
 
-@_expose("raw")
+@_expose("raw", read_only=True)
 def compare(kind: Literal["memory", "screen"], baseline: str, current: bool = True, target: str | None = None,
             region: MemoryRegion | ScreenRegion | None = None, filter: MemoryFilter = "changed",
             previous_value: int | None = None, current_value: int | None = None, max_results: int = 200,
             group: bool = True, mode: Literal["pixel", "grid", "both"] = "both", threshold: int = 0,
             include_image: bool = False) -> list:
     """Compare a snapshot against the live state (current=True) or another snapshot (target). Never advances frames.
+
+    Use to see which RAM bytes or pixels an input changed since a snapshot.
 
     memory -> byte changes in region (WRAM 0xC000-0xDFFF or HRAM 0xFF80-0xFFFE). filter selects changed,
               increased, etc.; previous_value/current_value keep exact byte values only.
@@ -219,13 +238,15 @@ def compare(kind: Literal["memory", "screen"], baseline: str, current: bool = Tr
     return _with_images(_as("screen", result), CompareData, png)
 
 
-@_expose("raw")
+@_expose("raw", read_only=True)
 def search_memory(action: Literal["search", "list"], session: str | None = None,
                   region: MemoryRegion = "WRAM", dtype: DataType = "uint8", endianness: Endianness = "little",
                   condition: SearchCondition = "unknown", exact: int | None = None, low: int | None = None,
                   high: int | None = None, pattern: str | None = None,
                   max_results: int = 200) -> Envelope[SearchData]:
     """Narrow down memory addresses across observations.
+
+    Use to find where the game stores a value (score, lives, level, piece, timer) by narrowing candidates as it changes.
 
     search -> start with session=None and condition "unknown" (keeps every address), or "exact", "range" or
               "pattern" (hex bytes like "00 FF ?? 12"). Pass the returned session with "increased", "decreased",
@@ -239,11 +260,13 @@ def search_memory(action: Literal["search", "list"], session: str | None = None,
                                                            low, high, pattern, max_results)), SearchData)
 
 
-@_expose("raw")
+@_expose("raw", read_only=True)
 def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm"], bank: int | None = None,
                  address: str | None = None, length: int = 16, count: int = 32, ascii: bool = False,
                  cross_check: bool = True) -> Envelope[CodeData]:
     """Inspect the running CPU or the ROM file. Read-only; never modifies the ROM or the emulator.
+
+    Use to read the cartridge header, CPU registers, ROM bytes or disassembly when finding the code behind a behaviour.
 
     cartridge -> header facts: title, type, ROM/RAM size, CGB flag, SHA-1, and integrity checks.
     cpu       -> registers (A, F, B, C, D, E, H, L, SP, PC), pairs and flags. Interrupt state is not exposed.
@@ -266,6 +289,8 @@ def hook_execution(action: Literal["register", "remove", "list"], bank: int | No
                    address: str | None = None, label: str | None = None,
                    max_observations: int = 20) -> Envelope[HookData]:
     """Register, remove or list execution hooks at a bank and address (up to 16).
+
+    Use to check whether a routine runs, and how often, while you step.
 
     A hook counts instruction fetches at one address and keeps up to max_observations register snapshots. It is
     not a memory watchpoint. Frame numbers are not available inside hook callbacks. Hooks are cleared on game reset

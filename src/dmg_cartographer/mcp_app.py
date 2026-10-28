@@ -4,6 +4,7 @@ import os
 
 from dmg_cartographer.core.controller import PyBoyController
 from mcp.server import MCPServer
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
@@ -26,47 +27,10 @@ mcp = MCPServer(
     "dmg-cartographer",
     instructions=(
         "Control one local Game Boy emulator, and record what its memory and screen mean. "
-        "Start with game(action='load', project_dir=<absolute project folder>, rom_path=<absolute path to a .gb "
-        "or .gbc file>). The ROM is copied into <project_dir>/.dmg-cartographer/roms/ and runs from the copy. "
-        "After that, game(action='load', project_dir=..., rom_name=<name from game(action='list')>) loads it again. "
-        "Each ROM gets one folder in <project_dir>/.dmg-cartographer/ holding its checkpoints, scenes, datasets, "
-        "maps, saves and knowledge files. "
-        "Every result has frame, rom_sha1 and held_buttons, plus a data object whose action field says which "
-        "result it is. "
-        "The game is PAUSED between calls. Time only moves in step: step(frames=1..600, press, release) or "
-        "step(actions=[...]) for up to 25 steps (1800 frames). Nothing else advances frames. A press held with "
-        "button() or step() stays held until released. A release takes effect on the next step, with no extra frame. "
-        "step(capture=true) returns the screen as a PNG too. screen() gives the current frame, with optional "
-        "overlays (pixels, tiles, sprites, regions); it never advances frames. "
-        "Checkpoints: state(action='save', name) and state(action='load', name). Use them for trial and error; "
-        "loading a checkpoint clears held buttons. Snapshots are in-memory copies for comparing later: "
-        "snapshot(action='capture', name), then compare(kind='memory' or 'screen', baseline=<id>). Snapshot and "
-        "compare calls never advance frames. "
-        "Reading memory: memory(action='read', address, length) returns bytes; memory(action='decode', ...) "
-        "interprets bytes with typed fields; search_memory narrows candidate addresses over several observations "
-        "(condition unknown, then changed, increased, exact, and so on). "
-        "Video: inspect_video(kind='tilemap' | 'tiles' | 'sprites' | 'palette' | 'area') reads the background, "
-        "window, OAM sprites and palette registers. screen_changes(baseline=<id>) describes what visibly changed. "
-        "Code: inspect_code(kind='cartridge' | 'cpu' | 'rom' | 'disasm') reads the header, registers, ROM bytes and "
-        "instructions. hook_execution counts fetches at one address (debug flag only). "
-        "Experiments: experiment(action='run', name, actions) snapshots, runs the actions and compares, with a "
-        "stored id like exp-0001. experiment(action='rank', names=[...]) ranks addresses that line up with the "
-        "named experiments. experiment(action='correlate', names=[...]) ranks them against visible screen changes. "
-        "experiment(action='validate', address, checkpoint, experiments, expected) tests one address from a "
-        "checkpoint. branch runs several action sequences from one checkpoint. watch advances exactly N frames and "
-        "reports changes in the monitors you choose. replay(mode='record') stores a run from a checkpoint, and "
-        "replay(mode='replay') checks it still reproduces. result(result_id) fetches a stored branch or replay. "
-        "All of these are correlations or repeatability checks, not proof of cause. Confirm them with fresh "
-        "experiments from new checkpoints. "
-        "Knowledge: discoveries(action='save', ...) records a hypothesis. It never verifies by itself; status "
-        "'verified' needs an experiment or replay id as evidence. discoveries(action='list') and export write "
-        "the saved set. export(name) writes a report folder. "
-        "Training data: scene(action='save', name, address, length, fields) labels the current frame with decoded "
-        "values, a PNG and a save state. scene(action='export', name) writes a versioned dataset folder that "
-        "dmg_cartographer.dataset.iter_scenes reads without MCP. "
-        "State maps: state_map(action='validate' | 'read', path) checks and reads a map.json, which describes "
-        "where the game keeps its state. Left out, path is the ROM's own maps/map.json. "
-        "Writes need DMG_CARTOGRAPHER_ENABLE_WRITES=1 (memory action write). Hooks need DMG_CARTOGRAPHER_ENABLE_DEBUG=1. "
+        "Start with game(action='load', project_dir=<absolute project folder>, "
+        "rom_path=<absolute path to a .gb or .gbc file>). The game is PAUSED between calls; only step advances "
+        "frames, and a pressed button stays held until released. state(action='save'|'load', name) are "
+        "checkpoints. Every result has frame, rom_sha1, held_buttons and a data object. "
         "Never assume RAM addresses carry over between games."
     ),
 )
@@ -82,15 +46,17 @@ SENSITIVE_ENABLED = {
 
 SENSITIVE_TOOLS = {"hook_execution": "debug"}  # memory(action="write") is gated inside the tool
 
-def _expose(group: str):
-    """Register a tool only when its group is enabled and, for sensitive tools, its flag is set."""
+def _expose(group: str, read_only: bool = False):
+    """Register a tool only when its group is enabled and, for sensitive tools, its flag is set.
+
+    read_only marks tools that never advance frames or write files, so clients can skip approval prompts."""
     def decorator(fn):
         if group not in GROUPS:
             return fn
         flag = SENSITIVE_TOOLS.get(fn.__name__)
         if flag is not None and not SENSITIVE_ENABLED[flag]:
             return fn
-        return mcp.tool()(fn)
+        return mcp.tool(annotations=ToolAnnotations(readOnlyHint=True) if read_only else None)(fn)
     return decorator
 
 MemoryRegion = Literal["WRAM", "HRAM"]

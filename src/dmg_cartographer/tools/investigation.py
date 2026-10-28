@@ -33,6 +33,8 @@ def experiment(action: Literal["run", "list", "rank", "correlate", "validate"],
                perturb: Perturb | None = None, allow_writes: bool = False, max_results: int = 50) -> Envelope[ExperimentData]:
     """Record, list and test experiments: named input runs compared against memory and screen.
 
+    Use to test what an input changes: run the same input several times, then rank the addresses that follow it.
+
     run      -> snapshot, run actions exactly (no hidden frames), snapshot again, compare. Needs name and actions.
                 Reuse the same name for repeats of one action so rank can group them. Stored as "exp-NNNN".
     list     -> stored experiments (metadata only).
@@ -77,6 +79,8 @@ def branch(checkpoint: str, branches: list[BranchSpec],
            max_results: int = 50) -> Envelope[BranchResult]:
     """Run several action sequences from the SAME checkpoint and compare each against it and each other.
 
+    Use to compare alternative inputs from one checkpoint, such as left against right against rotate.
+
     Each branch loads the checkpoint and runs its actions with exact frame counts. unique_changes shows bytes only
     that branch touched; shared_change_count counts bytes touched by all. The live emulator (frames, held buttons,
     memory) is restored afterwards, even if a branch fails. "sprites" in compare is not implemented yet.
@@ -94,6 +98,8 @@ def watch(addresses: list[str] | None = None, sprites: list[int] | None = None,
           cpu: bool = False, frames: int = 1, sample_every: int = 1, record_changes_only: bool = True,
           actions: list[Action] | None = None, max_events: int = 200) -> Envelope[WatchResult]:
     """Advance exactly `frames` frames and report changes in the chosen monitors. Choose at least one.
+
+    Use to see frame by frame when an address, sprite, tile area or screen region changes.
 
     addresses: up to 16 WRAM, HRAM or ROM addresses. sprites: up to 8 OAM slots. tiles: a map rectangle (up to 64
     tiles). screen_region: a rectangle of the screen. cpu: register values. actions, if given, must total `frames`
@@ -122,6 +128,8 @@ def replay(name: str, mode: Literal["record", "replay"] = "record", checkpoint: 
            actions: list[Action] | None = None, expect: dict[str, int] | None = None) -> Envelope[ReplayData]:
     """Record a run from a checkpoint, or replay it and report mismatches.
 
+    Use to store a route to a game state and check it still reproduces.
+
     record: runs actions exactly from the checkpoint and stores them with a fingerprint of WRAM, HRAM, frame count
             and held buttons before and after. expect {address: value} must hold, or nothing is stored.
     replay: restores the same checkpoint, reruns the stored steps and reports every fingerprinted field that differs.
@@ -132,9 +140,12 @@ def replay(name: str, mode: Literal["record", "replay"] = "record", checkpoint: 
     return envelope(core, ReplayData)
 
 
-@_expose("investigate")
+@_expose("investigate", read_only=True)
 def result(result_id: str) -> Envelope[ResultData]:
-    """Retrieve a stored branch or replay result by its result_id (kept for this session)."""
+    """Retrieve a stored branch or replay result by its result_id (kept for this session).
+
+    Use to fetch a branch or replay result again.
+    """
     return envelope(CONTROLLER.get_result(result_id), ResultData)
 
 
@@ -148,6 +159,8 @@ def discoveries(action: Literal["save", "list", "export"], name: str | None = No
                 label: str | None = None, include_evidence: bool = False,
                 rom_sha1: str | None = None) -> Envelope[DiscoveriesData]:
     """This game's saved hypotheses (JSON per ROM hash).
+
+    Use to record what an address or tile means, with its evidence, so it outlasts the session.
 
     save   -> record a discovery. status "verified" needs an experiment id ('exp-0003') or replay ('replay:name') in
               evidence; "disproven" needs one in counterexamples. Saving never verifies. update=true merges evidence.
@@ -174,6 +187,8 @@ def export(name: str, candidates: list[str] | None = None, include_screenshots: 
            markdown: bool = True, max_experiments: int = 200) -> Envelope[ExportReport]:
     """Write an investigation report to .dmg-cartographer/exports/<name>/ as analysis.json (+ analysis.md, screenshot PNG).
 
+    Use to write up the investigation (discoveries, experiments, candidates) as a report.
+
     Includes ROM metadata, discoveries, experiments with screen summaries, snapshots, search sessions, replays, and
     candidate addresses for the experiment names or ids in candidates. Returns file paths and counts.
     """
@@ -181,13 +196,15 @@ def export(name: str, candidates: list[str] | None = None, include_screenshots: 
     return envelope(core, ExportReport)
 
 
-@_expose("investigate")
+@_expose("investigate", read_only=True)
 def screen_changes(baseline: str, current: bool = True, target: str | None = None,
                    mode: Literal["pixel", "grid", "both"] = "both", threshold: int = 0,
                    region: ScreenRegion | None = None, include_sprites: bool = True,
                    include_tiles: bool = True, include_image: bool = False,
                    max_items: int = 50) -> list[Envelope[ScreenChangesData] | Image]:
     """Describe what visibly changed between two frames: changed pixels, 8x8 cells, rectangles, sprites, tiles.
+
+    Use to see what visibly changed after an input: which sprites moved and which tiles changed.
 
     baseline / target: snapshot ids or names (current=true compares with the live frame). Sprites are matched by OAM
     slot. Background tiles need include_tiles, and snapshots taken with include_tilemap=true. include_image adds a

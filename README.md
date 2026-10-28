@@ -1,6 +1,6 @@
 # dmg-cartographer
 
-A Game Boy and Game Boy Color reverse-engineering toolkit for AI agents, built on [PyBoy](https://github.com/Baekalfen/PyBoy) and the MCP Python SDK. It ships as a plugin for Claude Code and Codex: an MCP server with about 21 tools, plus four skills that describe how to investigate a game.
+A Game Boy and Game Boy Color reverse-engineering toolkit for AI agents, built on [PyBoy](https://github.com/Baekalfen/PyBoy) and the MCP Python SDK. It ships as a plugin for Claude Code and Codex: an MCP server with about 21 tools, plus five skills that describe how to investigate a game.
 
 It also produces training data. Labelled scenes export to a plain-file dataset, and a state map lets a training loop read the game's state straight from PyBoy, with no agent in the loop.
 
@@ -24,7 +24,7 @@ uv run pytest         # optional: runs the test suite
 
 ### Claude Code
 
-The folder is a plugin: `.claude-plugin/plugin.json` and `.mcp.json` describe the server, and `skills/` holds the four skills. Install it from the folder, or add it to a marketplace.
+The folder is a plugin: `.claude-plugin/plugin.json` and `.mcp.json` describe the server, and `skills/` holds the five skills. Install it from the folder, or add it to a marketplace.
 
 The server is launched by `.mcp.json`. It currently runs `uvx --from git+https://github.com/aiecee/dmg-cartographer dmg-cartographer`. Until that repo is public and pushed, change `args` to run from your clone:
 
@@ -75,6 +75,7 @@ Every result has `frame`, `rom_sha1`, `held_buttons` and a `data` object whose `
 
 ## Skills
 
+- **overview** says when to use the tools, how the emulator behaves and which skill fits which job.
 - **find-variable** finds and confirms what a memory address means.
 - **graphics** works out what is on screen.
 - **code** finds the code behind a behaviour.

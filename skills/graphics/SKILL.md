@@ -1,6 +1,6 @@
 ---
 name: graphics
-description: Work out what is on a Game Boy screen - tiles, sprites (OAM), background and window maps, palettes, and which pixels changed between frames. Use when the user asks what is drawn, where a sprite or tile is, what a visual change means, or how to locate objects on screen.
+description: Work out what is on a Game Boy screen, and read game objects (board, pieces, HUD digits) as data without pixels - tiles, sprites (OAM), background and window maps, palettes, and which pixels changed between frames. Use when the user asks what is drawn, where a sprite or tile is, what a visual change means, or how to locate objects on screen.
 ---
 
 # Read the screen

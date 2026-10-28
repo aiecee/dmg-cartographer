@@ -16,6 +16,8 @@ def scene(action: Literal["save", "list", "read", "export"], name: str | None = 
           include_states: bool = False) -> Envelope[SceneData]:
     """Label the current game state as a scene, and export saved scenes as a dataset.
 
+    Use to build training data: label game states with their decoded values and export them as a dataset for ML code.
+
     save   -> decodes `fields` from `length` bytes at `address` (the same field types as memory decode), then
               writes scenes/<rom>/<name>/ with scene.json (schema_version 1), capture.png and state.state.
               Advances no frames. Saving under an existing name overwrites that scene.

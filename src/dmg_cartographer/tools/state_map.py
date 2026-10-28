@@ -11,6 +11,8 @@ def state_map(action: Literal["validate", "read"], path: str | None = None,
               labelled: bool = False) -> Envelope[MapData]:
     """Work with a state map (map.json): where the game keeps its state, as fields with addresses and types.
 
+    Use to check or read the map.json that RL environments and other code use to read this game's state.
+
     validate -> checks the file against the map format and lists its fields. Needs no game loaded if path is given.
     read     -> decodes every field from the loaded game's memory at the current frame. Advances no frames.
                Refuses a map made for a different ROM. labelled=true returns lookup labels where the map has them.
