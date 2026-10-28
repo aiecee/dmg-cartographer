@@ -261,12 +261,14 @@ def search_memory(action: Literal["search", "list"], session: str | None = None,
 
 
 @_expose("raw", read_only=True)
-def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm"], bank: int | None = None,
+def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm", "search"], bank: int | None = None,
                  address: str | None = None, length: int = 16, count: int = 32, ascii: bool = False,
-                 cross_check: bool = True) -> Envelope[CodeData]:
+                 cross_check: bool = True, pattern: str | None = None,
+                 max_results: int = 50) -> Envelope[CodeData]:
     """Inspect the running CPU or the ROM file. Read-only; never modifies the ROM or the emulator.
 
-    Use to read the cartridge header, CPU registers, ROM bytes or disassembly when finding the code behind a behaviour.
+    Use to read the cartridge header, CPU registers, ROM bytes or disassembly when finding the code behind a behaviour,
+    and to search the ROM for the code that references an address.
 
     cartridge -> header facts: title, type, ROM/RAM size, CGB flag, SHA-1, and integrity checks.
     cpu       -> registers (A, F, B, C, D, E, H, L, SP, PC), pairs and flags. Interrupt state is not exposed.
@@ -274,6 +276,10 @@ def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm"], bank: int |
                  the emulator's view of the same bank. Bank 0 is 0x0000-0x3FFF; banks 1+ are 0x4000-0x7FFF.
     disasm    -> LR35902 instructions from the ROM file (up to 64), including CB-prefixed. This is a
                  decoding interpretation, not proof the bytes execute. Undefined opcodes are marked invalid.
+    search    -> every place pattern (hex bytes with ?? wildcards, e.g. "A0 C0" or "CD ?? 01") occurs in the ROM
+                 file, or only in bank. Addresses are little-endian, so 0xC0A0 is "A0 C0". Each match has bank,
+                 address and file_offset; bank and address go straight into kind='disasm'. At most max_results
+                 (1-500); truncated says whether more were left.
     """
     if kind == "cartridge":
         return envelope(_as("cartridge", CONTROLLER.inspect_cartridge()), CodeData)
@@ -281,6 +287,10 @@ def inspect_code(kind: Literal["cartridge", "cpu", "rom", "disasm"], bank: int |
         return envelope(_as("cpu", CONTROLLER.inspect_cpu()), CodeData)
     if kind == "rom":
         return envelope(_as("rom", CONTROLLER.inspect_rom(bank, address, length, ascii, cross_check)), CodeData)
+    if kind == "search":
+        if pattern is None:
+            raise ValueError("inspect_code(kind='search') needs pattern, e.g. 'A0 C0'")
+        return envelope(_as("search", CONTROLLER.search_rom(pattern, bank, max_results)), CodeData)
     return envelope(_as("disasm", CONTROLLER.disassemble_rom(bank, address, count)), CodeData)
 
 

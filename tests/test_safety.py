@@ -38,6 +38,7 @@ READ_ONLY_CALLS = [
     lambda c: c.inspect_cpu(),
     lambda c: c.inspect_rom(0, "0x0100", 8, cross_check=False),
     lambda c: c.disassemble_rom(0, "0x0100", 4),
+    lambda c: c.search_rom("00 ??", max_results=2),
     lambda c: c.decode_memory([{"name": "x", "type": "uint8"}], address="0xC100", length=1),
     lambda c: c.get_palette(),
     lambda c: c.inspect_cartridge(),

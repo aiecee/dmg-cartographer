@@ -703,7 +703,22 @@ class CodeDisasm(Out):
     label: str | None = None
 
 
-CodeData = Annotated[Union[CodeCartridge, CodeCpu, CodeRom, CodeDisasm], Field(discriminator="action")]
+class RomMatch(Out):
+    bank: int
+    address: str
+    file_offset: str
+
+
+class CodeSearch(Out):
+    action: Literal["search"]
+    pattern: str
+    bank: int | None = None
+    count: int
+    truncated: bool
+    matches: list[RomMatch]
+
+
+CodeData = Annotated[Union[CodeCartridge, CodeCpu, CodeRom, CodeDisasm, CodeSearch], Field(discriminator="action")]
 
 
 # hook_execution ------------------------------------------------------------------------------------

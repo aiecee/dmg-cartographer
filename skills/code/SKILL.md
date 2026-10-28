@@ -14,6 +14,7 @@ Code analysis is read-only. `inspect_code` never changes the ROM or the emulator
 - `inspect_code(kind='cartridge')`: header facts (title, cartridge type, ROM and RAM size, CGB flag, SHA-1), and integrity checks. Check `all_checks_pass` first.
 - `inspect_code(kind='rom', bank=..., address=..., length=...)`: raw bytes from the ROM file. Bank 0 is 0x0000-0x3FFF; banks 1 and up are 0x4000-0x7FFF. `cross_check` compares them with the emulator's view of the same bank.
 - `inspect_code(kind='disasm', bank=..., address=..., count=...)`: LR35902 instructions from the ROM file, with jump and call targets. This is an interpretation of bytes, not proof that they run.
+- `inspect_code(kind='search', pattern=..., bank=...)`: every place a byte pattern (`??` wildcards) occurs in the ROM file, or in one bank. Each match has `bank`, `address` and `file_offset`. `truncated` says whether `max_results` cut the list short.
 - `inspect_code(kind='cpu')`: registers, register pairs and flags at the current frame. Interrupt state and the current ROM bank are not exposed by PyBoy's public API.
 - `hook_execution(action='register', bank=..., address=..., label=...)`: count instruction fetches at one address and keep register snapshots. Needs `DMG_CARTOGRAPHER_ENABLE_DEBUG=1`. `list` and `remove` manage hooks. Hooks are cleared on game reset or load.
 - `memory(action='read', ...)` and `search_memory`: find the RAM bytes first, then see what code touches them.
@@ -21,11 +22,12 @@ Code analysis is read-only. `inspect_code` never changes the ROM or the emulator
 ## Workflow
 
 1. `inspect_code(kind='cartridge')` for the header and checks. Confirm the file and the emulator agree.
-2. Find where the behaviour happens in time. Use `step` from a checkpoint to reach the moment the value changes (see the `find-variable` skill for finding the value).
-3. Read the CPU at that moment: `inspect_code(kind='cpu')`. The program counter (PC) points at code running now.
-4. Disassemble around the PC: `inspect_code(kind='disasm', bank=..., address=<PC or a nearby label>, count=32)`. Bank comes from where the PC lives (0x4000-0x7FFF needs the switchable bank; `inspect_code(kind='rom')` with `cross_check` helps confirm it). Follow jump and call targets by disassembling them.
-5. To find what writes a value, register a hook at a candidate routine: `hook_execution(action='register', bank=..., address=..., label='routine_x')`, step, then `hook_execution(action='list')` to read its hit count and register snapshots. A hook says the routine ran; it doesn't say it wrote the value.
-6. Record the link with `discoveries(action='save', ...)`, citing the experiments or replays that show it.
+2. If you already know the RAM address (see the `find-variable` skill), find the code that references it: `inspect_code(kind='search', pattern=<address bytes, little-endian>)`, so 0xC0A0 is `"A0 C0"`. Disassemble a little before each match with `inspect_code(kind='disasm', bank=<match bank>, address=<match address - 1>)`; the operand usually follows a 1-byte opcode such as `LD HL,` (21), `LD A,(nn)` (FA) or `LD (nn),A` (EA). Matches can also be data, so check the instruction decodes sensibly.
+3. Find where the behaviour happens in time. Use `step` from a checkpoint to reach the moment the value changes (see the `find-variable` skill for finding the value).
+4. Read the CPU at that moment: `inspect_code(kind='cpu')`. The program counter (PC) points at code running now.
+5. Disassemble around the PC: `inspect_code(kind='disasm', bank=..., address=<PC or a nearby label>, count=32)`. Bank comes from where the PC lives (0x4000-0x7FFF needs the switchable bank; `inspect_code(kind='rom')` with `cross_check` helps confirm it). Follow jump and call targets by disassembling them.
+6. To find what writes a value, register a hook at a candidate routine: `hook_execution(action='register', bank=..., address=..., label='routine_x')`, step, then `hook_execution(action='list')` to read its hit count and register snapshots. A hook says the routine ran; it doesn't say it wrote the value.
+7. Record the link with `discoveries(action='save', ...)`, citing the experiments or replays that show it.
 
 ## Pitfalls
 

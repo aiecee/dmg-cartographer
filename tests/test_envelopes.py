@@ -104,6 +104,7 @@ def test_code_actions(ctl):
     check(raw.inspect_code("cartridge"), "cartridge")
     check(raw.inspect_code("rom", bank=0, address="0x0100", length=4), "rom")
     check(raw.inspect_code("disasm", bank=0, address="0x0150", count=2), "disasm")
+    check(raw.inspect_code("search", pattern="00 ??", max_results=2), "search")
 
 
 def test_hook_list(ctl):

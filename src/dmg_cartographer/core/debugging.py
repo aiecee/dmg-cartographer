@@ -1,12 +1,14 @@
 """DebugMixin: the debugging operations of PyBoyController."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from dmg_cartographer import decode
 from dmg_cartographer import disasm
 from dmg_cartographer import memwrite
 from dmg_cartographer.core.shared import read_registers
+from dmg_cartographer.search import parse_pattern
 
 
 class DebugMixin:
@@ -100,6 +102,38 @@ class DebugMixin:
                     "targets": targets,
                     "label": ("decoding interpretation of ROM bytes, not proof of executable control flow; "
                               "data can decode as valid instructions")}
+
+
+    def search_rom(self, pattern: str, bank: int | None = None, max_results: int = 50) -> dict[str, Any]:
+        """Find a byte pattern (?? wildcards) in the ROM file, one bank window at a time."""
+        wanted = parse_pattern(pattern)
+        if isinstance(max_results, bool) or not isinstance(max_results, int) or not 1 <= max_results <= 500:
+            raise ValueError("max_results must be 1..500")
+        # Overlapping matches via a lookahead; a match never crosses a bank boundary.
+        regex = re.compile(b"(?=" + b"".join(b"." if b is None else re.escape(bytes([b])) for b in wanted) + b")",
+                           re.DOTALL)
+        with self._lock:
+            if self._rom_path is None:
+                raise RuntimeError("No game loaded. Load a ROM first with game(action='load').")
+            rom = self._rom_path.read_bytes()
+        if bank is not None:
+            decode.check_rom_read(len(rom), bank, 0 if bank == 0 else decode.ROM_BANK, 1)
+        banks = [bank] if bank is not None else range(max(1, -(-len(rom) // decode.ROM_BANK)))
+        matches: list[dict[str, Any]] = []
+        truncated = False
+        for b in banks:
+            base = b * decode.ROM_BANK
+            window = 0 if b == 0 else decode.ROM_BANK
+            for m in regex.finditer(rom[base:base + decode.ROM_BANK]):
+                if len(matches) == max_results:
+                    truncated = True
+                    break
+                matches.append({"bank": b, "address": f"0x{window + m.start():04X}",
+                                "file_offset": f"0x{base + m.start():06X}"})
+            if truncated:
+                break
+        return {"pattern": " ".join("??" if b is None else f"{b:02X}" for b in wanted), "bank": bank,
+                "count": len(matches), "truncated": truncated, "matches": matches}
 
 
     def hook_execution(self, action: str, bank: int | None = None, address: Any = None,

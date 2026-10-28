@@ -159,6 +159,7 @@ def test_inspect_cpu_and_rom_never_advance(emu):
     emu.inspect_cpu()
     emu.inspect_rom(0, "0x0100", 8)
     emu.disassemble_rom(0, "0x0100", 4)
+    emu.search_rom("CD ?? 12")
     assert emu._pyboy.ticks == ticks
 
 
@@ -206,6 +207,38 @@ def test_disassembly_marks_instructions_cut_by_the_bank_end(emu):
         emu.disassemble_rom(0, "0x4000", 2)  # bank 0 window is 0x0000-0x3FFF
     with pytest.raises(ValueError):
         emu.disassemble_rom(0, "0x0100", 65)
+
+
+# ---------- ROM search ----------
+
+def test_rom_search_finds_bank_0_and_switchable_bank_matches(emu):
+    data = bytearray(emu._rom_path.read_bytes())
+    data[0x0200:0x0203] = b"\x21\xA0\xC0"        # LD HL,$C0A0 in bank 0
+    data[0x4F00:0x4F03] = b"\xFA\xA0\xC0"        # LD A,($C0A0) in bank 1
+    emu._rom_path.write_bytes(bytes(data))
+    out = emu.search_rom("a0 c0")
+    assert out["pattern"] == "A0 C0" and out["truncated"] is False
+    assert out["matches"] == [{"bank": 0, "address": "0x0201", "file_offset": "0x000201"},
+                              {"bank": 1, "address": "0x4F01", "file_offset": "0x004F01"}]
+    assert emu.search_rom("A0 C0", bank=1)["matches"] == [out["matches"][1]]
+    # a match feeds straight into the disassembler, one byte back for the opcode
+    insn = emu.disassemble_rom(1, "0x4F00", 1)["instructions"][0]
+    assert insn["mnemonic"] == "LD" and insn["bytes"] == "FA A0 C0"
+
+
+def test_rom_search_wildcards_and_cap(emu):
+    out = emu.search_rom("CD ?? 12")                 # CALL $1234 at 0x0102
+    assert [m["address"] for m in out["matches"]] == ["0x0102"]
+    capped = emu.search_rom("00 00", max_results=3)  # the synthetic ROM is mostly zeros
+    assert capped["count"] == 3 and capped["truncated"] is True
+    assert [m["address"] for m in capped["matches"]] == ["0x0000", "0x0001", "0x0002"]  # overlapping
+
+
+def test_rom_search_rejects_bad_input(emu):
+    for bad in [dict(pattern="A0 C"), dict(pattern="ZZ"), dict(pattern=""), dict(pattern="A0", bank=2),
+                dict(pattern="A0", max_results=0)]:
+        with pytest.raises(ValueError):
+            emu.search_rom(**bad)
 
 
 # ---------- hooks ----------
