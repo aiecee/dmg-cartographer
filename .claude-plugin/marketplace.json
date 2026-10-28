@@ -1,0 +1,13 @@
+{
+  "name": "dmg-cartographer",
+  "owner": {"name": "Matt Collinge"},
+  "description": "Game Boy reverse-engineering tools for Claude Code.",
+  "plugins": [
+    {
+      "name": "dmg-cartographer",
+      "source": "./",
+      "description": "Reverse-engineer Game Boy games: a PyBoy MCP server with frame-exact control, memory and screen investigation, scenes and datasets for ML, and five skills.",
+      "category": "development"
+    }
+  ]
+}

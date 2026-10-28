@@ -13,28 +13,38 @@ ROMs are not included. Use only ROMs you are entitled to use.
 
 ## Install
 
-Clone the repo, then point your client at it.
-
-```bash
-git clone <this repo> dmg-cartographer
-cd dmg-cartographer
-uv sync --extra dev   # optional: prepares the environment so the first launch is quick
-uv run pytest         # optional: runs the test suite
-```
+The repo is a plugin marketplace for both clients, so there is nothing to clone. The plugin brings the five skills and the MCP server, which `uvx` fetches from GitHub and runs on first launch.
 
 ### Claude Code
 
-The folder is a plugin: `.claude-plugin/plugin.json` and `.mcp.json` describe the server, and `skills/` holds the five skills. Install it from the folder, or add it to a marketplace.
-
-The server is launched by `.mcp.json`. It currently runs `uvx --from git+https://github.com/aiecee/dmg-cartographer dmg-cartographer`. Until that repo is public and pushed, change `args` to run from your clone:
-
-```json
-{ "mcpServers": { "dmg-cartographer": { "type": "stdio", "command": "uvx", "args": ["--from", "/absolute/path/to/dmg-cartographer", "dmg-cartographer"] } } }
+```bash
+claude plugin marketplace add aiecee/dmg-cartographer
 ```
+
+```bash
+claude plugin install dmg-cartographer@dmg-cartographer
+```
+
+Or, inside Claude Code, run `/plugin marketplace add aiecee/dmg-cartographer` and then `/plugin install dmg-cartographer@dmg-cartographer`. Restart the session to load it.
 
 ### Codex
 
-`.codex-plugin/plugin.json` points at the same `skills/` folder and `.mcp.json`. Codex doesn't expand Claude's `${CLAUDE_PLUGIN_ROOT}`, so the launch path must be absolute, as above. Check that your Codex version reads the `mcpServers` key from plugin files.
+```bash
+codex plugin marketplace add aiecee/dmg-cartographer
+```
+
+```bash
+codex plugin add dmg-cartographer@dmg-cartographer
+```
+
+### From a clone
+
+To work on the plugin itself, clone the repo and add the folder as the marketplace instead, with `claude plugin marketplace add /path/to/dmg-cartographer` or `codex plugin marketplace add /path/to/dmg-cartographer`. `.mcp.json` still runs the server from GitHub. To run your local code instead, change its `args` to `["--from", "/absolute/path/to/dmg-cartographer", "dmg-cartographer"]`.
+
+```bash
+uv sync --extra dev   # prepares the environment
+uv run pytest         # runs the test suite
+```
 
 ## First calls
 
