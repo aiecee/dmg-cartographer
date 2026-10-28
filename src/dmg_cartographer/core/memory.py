@@ -11,13 +11,12 @@ from dmg_cartographer import memwrite
 class MemoryMixin:
     """Methods for the memory part of the emulator controller."""
 
-    def read_memory(self, address: int, length: int = 1) -> dict[str, Any]:
+    def read_memory(self, address: int | str, length: int = 1) -> dict[str, Any]:
         with self._lock:
             game = self._require_game()
-            if (type(address) is not int or type(length) is not int
-                or address < 0 or length < 1 or length > MAX_MEMORY_READ
-                or address + length > 0x10000):
-                raise ValueError(f"address must be 0..65535; length 1..{MAX_MEMORY_READ}, within address space")
+            address = memwrite.parse_address(address)
+            if type(length) is not int or length < 1 or length > MAX_MEMORY_READ or address + length > 0x10000:
+                raise ValueError(f"length must be 1..{MAX_MEMORY_READ} and stay within the address space")
             values = [int(game.memory[address + offset]) for offset in range(length)]
             return {"address": address, "hex_address": f"0x{address:04X}", "bytes": values,
                     "hex_bytes": " ".join(f"{value:02X}" for value in values)}

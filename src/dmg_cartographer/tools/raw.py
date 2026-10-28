@@ -155,7 +155,7 @@ def memory(action: Literal["read", "decode", "write"], address: int | str | None
 
     Use to read a known address (score, level, piece) or decode bytes into typed fields.
 
-    read   -> address (int) and length (up to 256 bytes) of the 64KiB address space.
+    read   -> address (an int, or a string such as '0xC0A0') and length (up to 256 bytes) of the 64KiB address space.
     decode -> interprets bytes without changing state. Give address + length, or hex_bytes. Field types: uint8,
               int8, uint16, int16 (endianness little/big), bits (offset, bit, width), bcd (length), string (length),
               array (count, stride, item), pattern (?? wildcards). Each field has a name and optional offset.

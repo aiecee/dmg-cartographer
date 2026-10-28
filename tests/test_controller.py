@@ -167,8 +167,11 @@ def test_screen_area_tilemap_memory(controller, project):
     assert controller.game_area()["tiles"] == [[1, 2], [3, 4]]
     assert controller.tilemap("background", 5, 6, 2, 2)["tiles"] == [[197, 198], [229, 230]]
     assert controller.read_memory(0xC000, 3)["bytes"] == [0, 1, 2]
+    assert controller.read_memory("0xC000", 3)["bytes"] == [0, 1, 2]  # same string form as write and decode
     with pytest.raises(ValueError):
         controller.read_memory(65535, 2)
+    with pytest.raises(ValueError, match="invalid address"):
+        controller.read_memory("C000", 1)
     with pytest.raises(ValueError):
         controller.tilemap(width=33)
 
